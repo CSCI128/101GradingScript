@@ -12,7 +12,8 @@ def loadCSV(_filename):
 
 
 '''
-This function loads the select grade scope CSV file
+This function loads the selected gradescope CSV file, drops all unnecessary columns, 
+and modifies the existing columns to be more easily merged when the resulting CSV
 '''
 
 
@@ -20,5 +21,11 @@ def loadGradescope(_filename):
     pass
 
 
-def loadCanvas(_filename):
+'''
+This function loads the selected canvas grade book, drops all assignments that are not selected,
+drops all unnecessary columns, and modifies the existing columns to be more easily merged.   
+'''
+
+
+def loadCanvas(_filename, _assignment):
     pass
