@@ -70,22 +70,19 @@ def loadGradescope(_filename):
     # print(gradescope.columns.values.tolist())
     # Process and apply grace period. Add days counter.
     for i, row in gradescope.iterrows():
-        # todo check more gradescope files to see how lateness is actually stored
-        #  currently I think it is stored by day
         # In the gradescope CSV, lateness is store as H:M:S (Hours, Minutes, Seconds).
-        # hours, minutes, seconds = gradescope.at[i, 'Lateness'].split(':')
+        hours, minutes, seconds = gradescope.at[i, 'Lateness'].split(':')
         # converting everything to minutes to make this once step easier
-        # lateness = (float(hours) * 60) + float(minutes) + (float(seconds) / 60)
-        lateness = gradescope.at[i, 'Lateness'] * 24 * 60
+        lateness = (float(hours) * 60) + float(minutes) + (float(seconds) / 60)
         if lateness <= GRADESCOPE_GRACE_PERIOD:
-            gradescope.at[i, 'Lateness'] = 0
+            gradescope.at[i, 'Lateness'] = f"0:0:0:0"  # set format to D:H:M:S (Days, Hours, Minutes, Seconds)
         else:
             pass
             # we are now adding days to make later stuff easier when we have to compare timestamps
             # of when special cases need to be applied and what late penitently should be applied.
-            # days = hours % 24
-            # hours -= days * 24
-            # gradescope.at[i, 'Lateness'] = f"{days}:{hours}:{minutes}:{seconds}"
+            days = hours % 24
+            hours -= days * 24
+            gradescope.at[i, 'Lateness'] = f"{days}:{hours}:{minutes}:{seconds}"
 
     # Get multipass from email
     for i, row in gradescope.iterrows():
