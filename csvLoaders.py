@@ -1,6 +1,8 @@
 import pandas as pd
 import os
 
+import canvasHelperFunctions as canvas
+
 # When dropping all the unnecessary rows, drop all but these guys ALWAYS.
 # Exceptions (like for canvas we want to drop all but the assignment we are posting) exist,
 # and are handled in each function
@@ -30,7 +32,8 @@ def findFile(_filename):
 
 '''
 This function validates that a CSV file with the name '_filename' exists 
-If it does, it loads it in to a Pandas dataframe to be returned 
+If it does, it loads it in to a Pandas dataframe to be returned. In the event of an error,
+an empty pandas dataframe is returned
 '''
 
 
@@ -55,6 +58,8 @@ def loadCSV(_filename):
 '''
 This function loads the selected gradescope CSV file, drops all unnecessary columns, 
 and modifies the existing columns to be more easily merged when the resulting CSV
+PARAMS:
+    _filename - the filename of the assignment to be graded
 '''
 
 
@@ -82,7 +87,6 @@ def loadGradescope(_filename):
         if lateness <= GRADESCOPE_GRACE_PERIOD:
             gradescopeDF.at[i, 'Lateness'] = f"0:0:0:0"  # set format to D:H:M:S (Days, Hours, Minutes, Seconds)
         else:
-            pass
             # we are now adding days to make later stuff easier when we have to compare timestamps
             # of when special cases need to be applied and what late penitently should be applied.
             days = hours % 24
@@ -104,10 +108,17 @@ def loadGradescope(_filename):
 '''
 This function loads the selected canvas grade book, drops all assignments that are not selected,
 drops all unnecessary columns, and modifies the existing columns to be more easily merged.   
+PARAMS: 
+    _filename - the file name of the canvas grade book. A string 
+    _assignments - the *list* of assignments 
 '''
 
 
-def loadCanvas(_filename, _assignment):
+def loadCanvas(_filename, _assignments):
+    if type(_assignments) is not list:
+        raise TypeError("loadCanvas(_filename, _assignments) -  _assignments MUST be a list." +
+                        f"Type is {type(_assignments)}")
+
     canvasDF = loadCSV(_filename)
     if canvasDF.empty:
         print("Loading Canvas Grade book failed.")
@@ -115,28 +126,18 @@ def loadCanvas(_filename, _assignment):
 
     # map common assignment name to canvas name - is impractical to do this in a config
     #  file because canvas gives each assignment an id that changes every year.
-    locatedAssignment = False
-    print(f"Attempting to locate {_assignment}...", end="")
-    for assignmentCanvasName in canvasDF.columns.values.tolist():
-        if _assignment in assignmentCanvasName:
-            locatedAssignment = True
-            _assignment = assignmentCanvasName
-            print("Found.")
-            break
-    if locatedAssignment:
-        print(f"Canvas assignment located at {_assignment}")
-    else:
-        print("Error")
-        print(f"Failed to locate {_assignment}")
-        return pd.DataFrame()
 
-    # drop all unused columns - so every thing but the 'never drop' list and the now mapped assignment
+    for i, assignment in enumerate(_assignments):
+        _assignments[i] = canvas.locateAssignment(canvasDF, assignment)
 
+    _assignments = [assignment for assignment in _assignments if assignment]  # remove failures from assignment list
+
+    # drop all unused columns - so every thing but the 'never drop' list and the now mapped assignments
     for col in canvasDF.columns.values.tolist():
-        if col not in CANVAS_NEVER_DROP and col != _assignment:
+        if col not in CANVAS_NEVER_DROP and col not in _assignments:
             canvasDF = canvasDF.drop(columns=col)
 
-    print(_assignment)
+    print(_assignments)
     print(canvasDF.columns.values.tolist())
 
     return canvasDF
