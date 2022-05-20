@@ -71,6 +71,7 @@ def loadGradescope(_filename):
         return gradescopeDF
 
     gradescopeDF.rename(columns={'Lateness (H:M:S)': 'Lateness'}, inplace=True)
+
     for col in gradescopeDF.columns.values.tolist():
         # for gradescope, because we only care about the 'never drop' columns
         # we can drop all but those
@@ -80,18 +81,17 @@ def loadGradescope(_filename):
     # print(gradescope.columns.values.tolist())
     # Process and apply grace period. Add days counter.
     for i, row in gradescopeDF.iterrows():
+
+        # Handles edge case where student has not submitted. Lateness will NaN rather than 0:0:0.
+        if type(row['Lateness']) is not str:
+            continue
+
         # In the gradescope CSV, lateness is store as H:M:S (Hours, Minutes, Seconds).
-        hours, minutes, seconds = gradescopeDF.at[i, 'Lateness'].split(':')
+        hours, minutes, seconds = row['Lateness'].split(':')
         # converting everything to minutes to make this once step easier
         lateness = (float(hours) * 60) + float(minutes) + (float(seconds) / 60)
         if lateness <= GRADESCOPE_GRACE_PERIOD:
-            gradescopeDF.at[i, 'Lateness'] = f"0:0:0:0"  # set format to D:H:M:S (Days, Hours, Minutes, Seconds)
-        else:
-            # we are now adding days to make later stuff easier when we have to compare timestamps
-            # of when special cases need to be applied and what late penitently should be applied.
-            days = hours % 24
-            hours -= days * 24
-            gradescopeDF.at[i, 'Lateness'] = f"{days}:{hours}:{minutes}:{seconds}"
+            gradescopeDF.at[i, 'Lateness'] = f"0:0:0"  # set format to H:M:S (Hours, Minutes, Seconds)
 
     # Get multipass from email
     for i, row in gradescopeDF.iterrows():
@@ -100,8 +100,8 @@ def loadGradescope(_filename):
     # change name to what canvas uses for slightly easier joining - all SIS id are guaranteed to be unique by ITS
     gradescopeDF.rename(columns={'Email': 'SIS Login ID'}, inplace=True)
 
-    print(gradescopeDF.columns.values.tolist())
-    print(gradescopeDF.head().values.tolist())
+    # print(gradescopeDF.columns.values.tolist())
+    # print(gradescopeDF.head().values.tolist())
     return gradescopeDF
 
 
