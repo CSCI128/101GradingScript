@@ -19,7 +19,7 @@ def findFile(_filename):
     directoriesToCheck = ["./", "./grades/", "./canvas/", "./gradescope/"]
 
     for directory in directoriesToCheck:
-        print(f"\t...Checking \'{directory}\'...", end="")
+        print(f"\tChecking \'{directory}\'...", end="")
         if os.path.exists(f"{directory}{_filename}"):
             print("Found.")
             return f"{directory}{_filename}"
@@ -43,7 +43,7 @@ def loadCSV(_filename):
     _filename = findFile(_filename)
     if not _filename:
         print("...Error")
-        return False
+        return pd.DataFrame()
 
     loadedData = pd.read_csv(_filename)
 
@@ -59,41 +59,46 @@ and modifies the existing columns to be more easily merged when the resulting CS
 
 
 def loadGradescope(_filename):
-    gradescope = loadCSV(_filename)
-    gradescope.rename(columns={'Lateness (H:M:S)': 'Lateness'}, inplace=True)
-    for col in gradescope.columns.values.tolist():
+    gradescopeDF = loadCSV(_filename)
+
+    if gradescopeDF.empty:
+        print("Loading Gradescope CSV failed.")
+        return gradescopeDF
+
+    gradescopeDF.rename(columns={'Lateness (H:M:S)': 'Lateness'}, inplace=True)
+    for col in gradescopeDF.columns.values.tolist():
         # for gradescope, because we only care about the 'never drop' columns
         # we can drop all but those
         if col not in GRADESCOPE_NEVER_DROP:
-            gradescope = gradescope.drop(columns=col)
+            gradescopeDF = gradescopeDF.drop(columns=col)
 
     # print(gradescope.columns.values.tolist())
     # Process and apply grace period. Add days counter.
-    for i, row in gradescope.iterrows():
+    for i, row in gradescopeDF.iterrows():
         # In the gradescope CSV, lateness is store as H:M:S (Hours, Minutes, Seconds).
-        hours, minutes, seconds = gradescope.at[i, 'Lateness'].split(':')
+        hours, minutes, seconds = gradescopeDF.at[i, 'Lateness'].split(':')
         # converting everything to minutes to make this once step easier
         lateness = (float(hours) * 60) + float(minutes) + (float(seconds) / 60)
         if lateness <= GRADESCOPE_GRACE_PERIOD:
-            gradescope.at[i, 'Lateness'] = f"0:0:0:0"  # set format to D:H:M:S (Days, Hours, Minutes, Seconds)
+            gradescopeDF.at[i, 'Lateness'] = f"0:0:0:0"  # set format to D:H:M:S (Days, Hours, Minutes, Seconds)
         else:
             pass
             # we are now adding days to make later stuff easier when we have to compare timestamps
             # of when special cases need to be applied and what late penitently should be applied.
             days = hours % 24
             hours -= days * 24
-            gradescope.at[i, 'Lateness'] = f"{days}:{hours}:{minutes}:{seconds}"
+            gradescopeDF.at[i, 'Lateness'] = f"{days}:{hours}:{minutes}:{seconds}"
 
     # Get multipass from email
-    for i, row in gradescope.iterrows():
-        gradescope.at[i, 'Email'] = gradescope.at[i, 'Email'].split('@')[0]  # get multipass out of email
+    for i, row in gradescopeDF.iterrows():
+        gradescopeDF.at[i, 'Email'] = gradescopeDF.at[i, 'Email'].split('@')[0]  # get multipass out of email
         # this approach doesn't work as great if students aren't in gradescope with their correct emails, but I digress
     # change name to what canvas uses for slightly easier joining - all SIS id are guaranteed to be unique by ITS
-    gradescope.rename(columns={'Email': 'SIS Login ID'}, inplace=True)
+    gradescopeDF.rename(columns={'Email': 'SIS Login ID'}, inplace=True)
 
-    print(gradescope.columns.values.tolist())
-    print(gradescope.head().values.tolist())
-    return gradescope
+    print(gradescopeDF.columns.values.tolist())
+    print(gradescopeDF.head().values.tolist())
+    return gradescopeDF
 
 
 '''
@@ -103,7 +108,38 @@ drops all unnecessary columns, and modifies the existing columns to be more easi
 
 
 def loadCanvas(_filename, _assignment):
-    pass
+    canvasDF = loadCSV(_filename)
+    if canvasDF.empty:
+        print("Loading Canvas Grade book failed.")
+        return canvasDF
+
+    # map common assignment name to canvas name - is impractical to do this in a config
+    #  file because canvas gives each assignment an id that changes every year.
+    locatedAssignment = False
+    print(f"Attempting to locate {_assignment}...", end="")
+    for assignmentCanvasName in canvasDF.columns.values.tolist():
+        if _assignment in assignmentCanvasName:
+            locatedAssignment = True
+            _assignment = assignmentCanvasName
+            print("Found.")
+            break
+    if locatedAssignment:
+        print(f"Canvas assignment located at {_assignment}")
+    else:
+        print("Error")
+        print(f"Failed to locate {_assignment}")
+        return pd.DataFrame()
+
+    # drop all unused columns - so every thing but the 'never drop' list and the now mapped assignment
+
+    for col in canvasDF.columns.values.tolist():
+        if col not in CANVAS_NEVER_DROP and col != _assignment:
+            canvasDF = canvasDF.drop(columns=col)
+
+    print(_assignment)
+    print(canvasDF.columns.values.tolist())
+
+    return canvasDF
 
 
 '''
