@@ -1,3 +1,5 @@
+import math
+
 import pandas as pd
 
 '''
@@ -22,7 +24,7 @@ EXAMPLE:
 '''
 
 
-def scaleScores(_gradescopeDF, _scaleFactor, assignmentPoints=None,  maxScore=None, XCScaleFactor=None):
+def scaleScores(_gradescopeDF, _scaleFactor, assignmentPoints=None, maxScore=None, XCScaleFactor=None):
     if XCScaleFactor is None:
         XCScaleFactor = _scaleFactor
 
@@ -45,3 +47,65 @@ def scaleScores(_gradescopeDF, _scaleFactor, assignmentPoints=None,  maxScore=No
         _gradescopeDF.at[i, 'Total Score'] = grade
 
     return _gradescopeDF
+
+
+'''
+This function handles the students who didnt submit their work at the time that this script is being run.
+Supports not scoring missing work as well.
+Returns the modified
+PARAMS:
+    _gradescopeDF - The assignment being graded
+    score - The score to give students or None if they shouldn't be scored.
+    exceptions - Any exceptions that exist with the students multipass and they score they should receive 
+        Follows the same rules as score - not currently implemented
+        Might want to expand to include sections
+'''
+
+
+def scoreMissingAssignments(_gradescopeDF, score=0, exceptions=None):
+    if exceptions is not None:
+        raise AttributeError("Unable to process exceptions")
+
+    if score is not None:
+        for i, row in _gradescopeDF.iterrows():
+            _gradescopeDF.at[i, "Total Score"] = score
+
+
+'''
+This function calculates the late penalty according to the special cases 
+Returns modified gradescope dataframe and special cases dataframe
+PARAMS:
+    _gradescopeDF - the assignment being graded
+    _specialCasesDF - the special cases for the assignment being graded
+'''
+
+
+def calculateLatePenalty(_gradescopeDF, _specialCasesDF, latePenalty=None):
+    if latePenalty is None:
+        latePenalty = [1, .8, .6, .4, 0]
+
+    for i, row in _gradescopeDF.iterrows():
+        # Gradescope store lateness in H:M:S format
+        hours, minutes, seconds = row['Lateness'].split(':')
+        # We handled the grace period when we loaded the assignments
+        hoursLate = float(hours) + (float(minutes) / 60) + (float(seconds) / 60 / 60)
+        if row['SIS Login ID'] in _specialCasesDF['multipass'].values.tolist():
+            # reduce the number of hours that a submission is late
+            #  accomplished by subtracting the days that a submission was extended by
+            hoursLate -= (_specialCasesDF.loc['multipass' == row['SIS Login ID']]['extension_days']) * 24
+            if hoursLate < 0:
+                hoursLate = 0
+
+            _specialCasesDF.loc['multipass' == row['SIS Login ID']]['handled'] = True
+
+        # clac days late
+        daysLate = math.ceil(hoursLate/24)
+        if daysLate > len(latePenalty) - 1:
+            daysLate = len(latePenalty) - 1
+
+        # actually applying the late penalty
+        #  looking up in the list what it should be with the index as the index and daysLate directly correspond
+        _gradescopeDF[i, 'Total Score'] *= latePenalty[daysLate]
+
+    return _gradescopeDF
+
