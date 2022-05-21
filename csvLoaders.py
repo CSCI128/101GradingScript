@@ -102,8 +102,12 @@ def loadGradescope(_filename):
     # change name to what canvas uses for slightly easier joining - all SIS id are guaranteed to be unique by ITS
     gradescopeDF.rename(columns={'Email': 'SIS Login ID'}, inplace=True)
 
-    # print(gradescopeDF.columns.values.tolist())
-    # print(gradescopeDF.head().values.tolist())
+    # put names in format Last, First so that it matches canvas and special cases
+    for i, row in gradescopeDF.iterrows():
+        # this will only capture the first name and last name. If the student has any other names - they will be ignored
+        firstName, lastName = row['Name'].split(' ')[0:2]  # only get the first two elements
+        gradescopeDF.at[i, 'Name'] = f"{lastName}, {firstName}"
+
     return gradescopeDF
 
 

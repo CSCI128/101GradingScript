@@ -81,6 +81,8 @@ def scoreMissingAssignments(_gradescopeDF, score=0, exceptions=None):
 '''
 This function calculates the late penalty according to the special cases 
 Returns modified gradescope dataframe and special cases dataframe
+The special cases MUST be narrowed to one assignment before being passed. Other wise undefined behavior will happen 
+(like extensions may be improperly granted)
 PARAMS:
     _gradescopeDF - the assignment being graded
     _specialCasesDF - the special cases for the assignment being graded
@@ -91,7 +93,12 @@ def calculateLatePenalty(_gradescopeDF, _specialCasesDF, latePenalty=None):
     if latePenalty is None:
         latePenalty = [1, .8, .6, .4, 0]
 
+    specialCaseStudents = []
+    latePenaltyStudents = 0
     for i, row in _gradescopeDF.iterrows():
+        # Skip over students who didnt submit - they already got a zero
+        if row['Status'] == "Missing":
+            continue
         # Gradescope store lateness in H:M:S format
         hours, minutes, seconds = row['Lateness'].split(':')
         # We handled the grace period when we loaded the assignments
@@ -99,20 +106,34 @@ def calculateLatePenalty(_gradescopeDF, _specialCasesDF, latePenalty=None):
         if row['SIS Login ID'] in _specialCasesDF['multipass'].values.tolist():
             # reduce the number of hours that a submission is late
             #  accomplished by subtracting the days that a submission was extended by
-            hoursLate -= _specialCasesDF.loc[_specialCasesDF['multipass'] == row['SIS Login ID']]['extension_days'] * 24
+            hoursLate -= (_specialCasesDF.loc[_specialCasesDF['multipass'] == row['SIS Login ID']]['extension_days'][0]) * 24
             if hoursLate < 0:
                 hoursLate = 0
 
             _specialCasesDF.loc[_specialCasesDF['multipass'] == row['SIS Login ID']]['handled'] = True
+            specialCaseStudents.append(row['Name'])
 
         # clac days late
-        daysLate = math.ceil(hoursLate/24)
+        daysLate = math.ceil(hoursLate / 24)
         if daysLate > len(latePenalty) - 1:
             daysLate = len(latePenalty) - 1
 
         # actually applying the late penalty
         #  looking up in the list what it should be with the index as the index and daysLate directly correspond
-        _gradescopeDF[i, 'Total Score'] *= latePenalty[daysLate]
+        _gradescopeDF.at[i, 'Total Score'] *= latePenalty[daysLate]
 
-    return _gradescopeDF
+        # add students who actually received a penalty to a list
+        if daysLate != 0:
+            latePenaltyStudents += 1
 
+    # the only possible case here is if a student has a special case requested but was not found in gradescope
+    if len(specialCaseStudents) != len(_specialCasesDF['multipass']):
+        print("WARNING: Not all special cases were handled")
+        for student in _specialCasesDF['student_name'].values.tolist():
+            if student not in specialCaseStudents:
+                print(f"\t{student} was not found in Gradescope")
+
+    print(f"{len(specialCaseStudents)} of {len(_specialCasesDF['multipass'])} special cases were handled automatically")
+    print(f"{latePenaltyStudents} late penalties were applied")
+
+    return _gradescopeDF, _specialCasesDF
