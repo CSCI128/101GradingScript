@@ -1,3 +1,5 @@
+from statistics import mean
+
 import pandas as pd
 import os
 
@@ -95,7 +97,7 @@ def loadGradescope(_filename):
 
     # Get multipass from email
     for i, row in gradescopeDF.iterrows():
-        gradescopeDF.at[i, 'Email'] = gradescopeDF.at[i, 'Email'].split('@')[0]  # get multipass out of email
+        gradescopeDF.at[i, 'Email'] = row['Email'].split('@')[0]  # get multipass out of email
         # this approach doesn't work as great if students aren't in gradescope with their correct emails, but I digress
     # change name to what canvas uses for slightly easier joining - all SIS id are guaranteed to be unique by ITS
     gradescopeDF.rename(columns={'Email': 'SIS Login ID'}, inplace=True)
@@ -149,9 +151,31 @@ to the selected assignment.
 '''
 
 
-def loadSpecialCases(_filename, _assignment):
-    pass
+def loadSpecialCases(_filename, _assignments):
+    if type(_assignments) is not list:
+        raise TypeError("loadSpecialCases(_filename, _assignments) -  _assignments MUST be a list." +
+                        f"Type is {type(_assignments)}")
+    specialCasesDF = loadCSV(_filename)
+    if specialCasesDF.empty:
+        print("Loading special cases failed")
+        return specialCasesDF
 
+    # Narrows down special cases to only include the assignments that we are posting
+    specialCasesDF = specialCasesDF.loc[specialCasesDF['assignment'].isin(_assignments)]
+
+    # Get multipass from email
+    for i, row in specialCasesDF.iterrows():
+        specialCasesDF.at[i, 'email'] = row['email'].split("@")[0]
+
+    # Change column name to accurately reflect what is in it
+    specialCasesDF.rename(columns={'email': 'multipass'}, inplace=True)
+
+    print(f"Loaded {len(specialCasesDF['multipass'])} special cases for assignment(s) {_assignments}")
+    # account for stats error if no special cases exist
+    if len(specialCasesDF['multipass']) > 0:
+        print(f"Average extension is {mean(specialCasesDF['extension_days'])} day(s)")
+
+    return specialCasesDF
 
 '''
 This function loads the page flagging file, drops all rows whose assignment column does not correspond to the 
