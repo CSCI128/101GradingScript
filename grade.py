@@ -66,9 +66,16 @@ def scoreMissingAssignments(_gradescopeDF, score=0, exceptions=None):
     if exceptions is not None:
         raise AttributeError("Unable to process exceptions")
 
+    missingAssignments = 0
+
     if score is not None:
         for i, row in _gradescopeDF.iterrows():
-            _gradescopeDF.at[i, "Total Score"] = score
+            if row['Status'] == "Missing":
+                missingAssignments += 1
+                _gradescopeDF.at[i, "Total Score"] = score
+
+    print(f"Graded {missingAssignments} missing assignments")
+    return _gradescopeDF
 
 
 '''
@@ -92,11 +99,11 @@ def calculateLatePenalty(_gradescopeDF, _specialCasesDF, latePenalty=None):
         if row['SIS Login ID'] in _specialCasesDF['multipass'].values.tolist():
             # reduce the number of hours that a submission is late
             #  accomplished by subtracting the days that a submission was extended by
-            hoursLate -= (_specialCasesDF.loc['multipass' == row['SIS Login ID']]['extension_days']) * 24
+            hoursLate -= _specialCasesDF.loc[_specialCasesDF['multipass'] == row['SIS Login ID']]['extension_days'] * 24
             if hoursLate < 0:
                 hoursLate = 0
 
-            _specialCasesDF.loc['multipass' == row['SIS Login ID']]['handled'] = True
+            _specialCasesDF.loc[_specialCasesDF['multipass'] == row['SIS Login ID']]['handled'] = True
 
         # clac days late
         daysLate = math.ceil(hoursLate/24)
