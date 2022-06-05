@@ -38,14 +38,15 @@ class Canvas:
     '''
     This function retrieves data from canvas, accounting for how canvas will split data into pages of ten
     objects to minimise the cost of each request. (So our 100mb pull of assignments is split into smaller chunks)
-    Returns a list of dictionaries.
+    Returns a list of dictionaries. This also is only used for *GET* requests 
     PARAMS:
         _url - the endpoint to query
         _headers - the headers to send with each request - typically only has the API key
     '''
 
     @staticmethod
-    def __getPaginatedResponse__(_url, _headers):
+    def __getPaginatedResponse__(_url, _headers, flags=""):
+        _url += f"?{flags}"
         result = requests.get(_url, headers=_headers)
 
         if result.status_code != 200:
@@ -175,22 +176,53 @@ class Canvas:
 
         return parsedAssignments
 
-
     def getAssignmentsFromConfig(self, _configFile):
         if type(_configFile) is not dict:
             raise TypeError("Invalid config file")
         if not _configFile["assignments"] or len(_configFile["assignments"]) == 0:
             print("No assignments found")
-            return
+            return None
 
         self.m_assignments = _configFile["assignments"]
         print(f"Loaded {len(self.m_assignments)} assignments")
 
     def getStudents(self):
+        # /api/v1/courses/:course_id/users - get users for a course
         pass
 
     def getCourseList(self):
-        pass
+        # we are getting the list of course IDs here so we dont need to do a full validation
+        # api/v1/users/:userid/courses
+        if not self.API_KEY or not self.USER_ID:
+            return None
+
+        url = f"{self.ENDPOINT}/api/v1/users/{self.USER_ID}/courses"
+        header = {"Authorization": f"Bearer {self.API_KEY}"}
+
+        result = self.__getPaginatedResponse__(url, header)
+
+        validEnrollments = ['ta', 'teacher']
+        validCourses = []
+
+        for course in result:
+            if len(course) == 2:  # if there is an error message it will only be two long
+                continue
+
+            # filter out all student courses
+            if course['enrollments'][0]['type'] not in validEnrollments:
+                continue
+
+            parsedCourseData = dict()
+            parsedCourseData['name'] = course['course_code']  # this includes the semester as set by the registrar
+            parsedCourseData['id'] = course['id']
+            parsedCourseData['enrollment_type'] = course['enrollments'][0]['type']
+            validCourses.append(parsedCourseData)
+
+        print(f"Found {len(validCourses)} valid courses")
+
+        return validCourses
+
+
 
     def postAssignments(self):
         pass
