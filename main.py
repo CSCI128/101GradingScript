@@ -19,12 +19,10 @@ specialCases = None
 
 
 def run():
-    configFile = config.readConfig("sample_files/config.json")
+    configFile = config.loadConfig()
 
     canvas = Canvas()
 
     canvas.loadSettings(configFile)
-    assignmentGroups = canvas.getAssignmentGroupsFromCanvas()
-    assignments = canvas.getAssignmentsFromCanvas(["56569", "56570"])
+    canvas.getAssignmentsFromConfig(configFile)
 
-    print(assignments)
