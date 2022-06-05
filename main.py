@@ -26,3 +26,6 @@ def run():
     canvas.loadSettings(configFile)
     canvas.getAssignmentsFromConfig(configFile)
 
+
+if __name__ == "__main__":
+    run()

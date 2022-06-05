@@ -27,7 +27,7 @@ def createNewConfig():
 
     print("Please select your course")
     for i, course in enumerate(courses):
-        print(f"{i + 1} {course['name']}\t{course['enrollment_type']}\t{course['id']}")
+        print(f"{i + 1}: {course['name']}\t{course['enrollment_type']}\t{course['id']}")
 
     usrIn = int(input(f"(1 - {len(courses)}): "))
     selectedCourse = courses[usrIn - 1]
@@ -40,7 +40,7 @@ def createNewConfig():
     print("Enter the assignment groups that you would like to include")
 
     for i, element in enumerate(assignmentGroups):
-        print(f"{i + 1} {element[0]}\t{element[1]}")
+        print(f"{i + 1}: {element[0]}\t{element[1]}")
 
     print("When done entering values, type \'done\'")
 
