@@ -1,4 +1,5 @@
-import pandas as pd
+import requests
+import json
 
 '''
 This function takes the canvas grade book and the shorthand assignment name (ie: HW4, Lab 1, Assessment 2)
@@ -28,3 +29,17 @@ def locateAssignment(_canvasDF, _assignment):
         return False
 
     return _assignment
+
+
+def downloadUpdatedGradebook():
+    accessToken = "9802~rZSno3rAikJOCuHgUz90JkQOzoSfFXrm2Rp5TlrhqQ4uehPQnq5xqT5dC6n5anOJ"
+    endpoint = "/api/v1/courses/38531/gradebook_history/feed"  # this was found in files lol
+    host = "https://elearning.mines.edu"
+
+    url = host + endpoint
+    headers = {"Authorization": f"Bearer {accessToken}"}
+
+    result = requests.get(url, headers=headers)
+
+    print(result.status_code)
+    return result.json()
