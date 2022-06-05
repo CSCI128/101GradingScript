@@ -86,6 +86,7 @@ The special cases MUST be narrowed to one assignment before being passed. Other 
 PARAMS:
     _gradescopeDF - the assignment being graded
     _specialCasesDF - the special cases for the assignment being graded
+    _latePenalty - an array of floats that contains the score mods for the late penalty
 '''
 
 

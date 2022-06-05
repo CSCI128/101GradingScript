@@ -10,7 +10,7 @@ import canvasHelperFunctions as canvas
 # and are handled in each function
 CANVAS_NEVER_DROP = ['Student', 'ID', 'SIS Login ID', 'Section']
 GRADESCOPE_NEVER_DROP = ['Name', 'Email', 'Total Score', 'Status', 'Lateness']
-# Grace Period of 15 minutes - to allow
+# Grace Period of 15 minutes
 GRADESCOPE_GRACE_PERIOD = 15 * 60
 
 '''
