@@ -93,6 +93,10 @@ class Canvas:
 
         return commonName
 
+    '''
+    This function reads and the setting
+    '''
+
     def loadSettings(self, _configFile):
         if type(_configFile) is not dict:
             raise TypeError("Invalid config file")
@@ -221,8 +225,6 @@ class Canvas:
         print(f"Found {len(validCourses)} valid courses")
 
         return validCourses
-
-
 
     def postAssignments(self):
         pass
