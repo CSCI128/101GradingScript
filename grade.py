@@ -2,29 +2,26 @@ import math
 
 import pandas as pd
 
-'''
-This function scales the scores by the scale factor. It also takes into account different extra credit scaling. 
-This function does NOT consider lateness or page flagging in its calculations
-
-Returns the modified gradescope dataframe. 
-PARAMS:
-    _gradescopeDF - the current grades for the current assigment  
-    _scaleFactor - the scaling to apply to each grade
-    assignmentPoints - the total amount of *regular* *scaled* points the assignment has.
-        If not set, function assumes that *no* extra credit scaling is required
-    maxScore - the maximum *total* *scaled* score a student can get. Includes extra credit
-        If not set, function assumes that there is *no* upper score bound
-    XCScaleFactor - the scaling to apply to any points above the 'assignmentPoints' var
-        If not set, function assumes that normal scaling (as defined in '_scaleFactor')
-        also applies to extra credit
-EXAMPLE:
-    If we have an assignment that is worth 5 points, but has the option to earn a quarter point of extra credit for each
-    point earned over the normal amount we would set 
-    _scaleFactor = 1, assignmentPoints = 5, XCScaleFactor = .25
-'''
-
 
 def scaleScores(_gradescopeDF, _scaleFactor, assignmentPoints=None, maxScore=None, XCScaleFactor=None):
+    """
+    This function scales the scores by the scale factor. It also takes into account different extra credit scaling.
+    This function does NOT consider lateness or page flagging in its calculations
+    :param _gradescopeDF: the current grades for the current assigment
+    :param _scaleFactor: the scaling to apply to each grade
+    :param assignmentPoints: the total amount of *regular* *scaled* points the assignment has.
+            If not set, function assumes that *no* extra credit scaling is required
+    :param maxScore: the maximum *total* *scaled* score a student can get. Includes extra credit
+            If not set, function assumes that there is *no* upper score bound
+    :param XCScaleFactor: the scaling to apply to any points above the 'assignmentPoints' var
+            If not set, function assumes that normal scaling (as defined in '_scaleFactor')
+            also applies to extra credit
+    :example:
+        If we have an assignment that is worth 5 points, but has the option to earn a quarter point of extra credit for each
+        point earned over the normal amount we would set
+        _scaleFactor = 1, assignmentPoints = 5, XCScaleFactor = .25
+    :return: the modified gradescope dataframe.
+    """
     if XCScaleFactor is None:
         XCScaleFactor = _scaleFactor
 
@@ -49,20 +46,18 @@ def scaleScores(_gradescopeDF, _scaleFactor, assignmentPoints=None, maxScore=Non
     return _gradescopeDF
 
 
-'''
-This function handles the students who didnt submit their work at the time that this script is being run.
-Supports not scoring missing work as well.
-Returns the modified
-PARAMS:
-    _gradescopeDF - The assignment being graded
-    score - The score to give students or None if they shouldn't be scored.
-    exceptions - Any exceptions that exist with the students multipass and they score they should receive 
-        Follows the same rules as score - not currently implemented
-        Might want to expand to include sections
-'''
-
-
 def scoreMissingAssignments(_gradescopeDF, score=0, exceptions=None):
+    """
+    This function handles the students who didnt submit their work at the time that this script is being run.
+    Supports not scoring missing work as well.
+
+    :param _gradescopeDF: The assignment being graded
+    :param score: The score to give students or None if they shouldn't be scored.
+    :param exceptions: Any exceptions that exist with the students multipass and they score they should receive
+    Follows the same rules as score - not currently implemented Might want to expand to include sections
+
+    :return: the modified gradescope dataframe
+    """
     if exceptions is not None:
         raise AttributeError("Unable to process exceptions")
 
@@ -78,44 +73,43 @@ def scoreMissingAssignments(_gradescopeDF, score=0, exceptions=None):
     return _gradescopeDF
 
 
-'''
-This function calculates the late penalty according to the special cases 
-Returns modified gradescope dataframe and special cases dataframe
-The special cases MUST be narrowed to one assignment before being passed. Other wise undefined behavior will happen 
-(like extensions may be improperly granted)
-PARAMS:
-    _gradescopeDF - the assignment being graded
-    _specialCasesDF - the special cases for the assignment being graded
-    _latePenalty - an array of floats that contains the score mods for the late penalty
-'''
-
-
 def calculateLatePenalty(_gradescopeDF, _specialCasesDF, latePenalty=None):
+    """
+    This function calculates the late penalty according to the special cases
+    Returns modified gradescope dataframe and special cases dataframe
+    The special cases MUST be narrowed to one assignment before being passed. Otherwise, undefined behavior will happen
+    (like extensions may be improperly granted)
+
+    :param _gradescopeDF: the assignment being graded
+    :param _specialCasesDF: the special cases for the assignment being graded
+    :param latePenalty: an array of floats that contains the score mods for the late penalty
+    """
     if latePenalty is None:
         latePenalty = [1, .8, .6, .4, 0]
 
     specialCaseStudents = []
     latePenaltyStudents = 0
     for i, row in _gradescopeDF.iterrows():
-        # Skip over students who didnt submit - they already got a zero
+        # Skip over students who didn't submit - they already got a zero
         if row['Status'] == "Missing":
             continue
         # Gradescope store lateness in H:M:S format
         hours, minutes, seconds = row['Lateness'].split(':')
         # We handled the grace period when we loaded the assignments
         hoursLate = float(hours) + (float(minutes) / 60) + (float(seconds) / 60 / 60)
-        if row['SIS Login ID'] in _specialCasesDF['multipass'].values.tolist():
+        if row['sis_id'] in _specialCasesDF['multipass'].values.tolist():
             # reduce the number of hours that a submission is late
             #  accomplished by subtracting the days that a submission was extended by
-            hoursLate -= (_specialCasesDF.loc[_specialCasesDF['multipass'] == row['SIS Login ID']]['extension_days'][0]) * 24
+            hoursLate -= (_specialCasesDF.loc[_specialCasesDF['multipass'] == row['sis_id']]['extension_days'][0]) * 24
             if hoursLate < 0:
                 hoursLate = 0
 
-            _specialCasesDF.loc[_specialCasesDF['multipass'] == row['SIS Login ID']]['handled'] = True
+            _specialCasesDF.loc[_specialCasesDF['multipass'] == row['sis_id']]['handled'] = True
             specialCaseStudents.append(row['Name'])
 
         # clac days late
         daysLate = math.ceil(hoursLate / 24)
+        # if over penalty
         if daysLate > len(latePenalty) - 1:
             daysLate = len(latePenalty) - 1
 
