@@ -1,9 +1,13 @@
+import pandas as pd
 import requests
 import json
-import pandas as pd
 
 
 class Canvas:
+    """
+    This class helps us interface directly with canvas and abstracts some weirdness away
+    Importantly - this class supports paginated responses and handles them elegantly
+    """
 
     def __init__(self, _API_KEY="", _USER_ID="", _COURSE_ID="", _ENDPOINT=""):
         self.API_KEY = _API_KEY
@@ -13,14 +17,13 @@ class Canvas:
         self.m_students = []
         self.m_assignments = []
 
-    '''
-    This function checks to see if we have everything we need to make API calls to canvas.
-    RETURNS:
-        False - if something is invalid
-        True - if everything is defined correctly and *looks* like it should work
-    '''
-
     def __validate__(self):
+        """
+        This function checks to see if we have everything we need to make API calls to canvas.
+        RETURNS:
+            False - if something is invalid
+            True - if everything is defined correctly and *looks* like it should work
+        """
         if not self.API_KEY:
             print("API key is invalid")
             return False
@@ -35,17 +38,16 @@ class Canvas:
             return False
         return True
 
-    '''
-    This function retrieves data from canvas, accounting for how canvas will split data into pages of ten
-    objects to minimise the cost of each request. (So our 100mb pull of assignments is split into smaller chunks)
-    Returns a list of dictionaries. This also is only used for *GET* requests 
-    PARAMS:
-        _url - the endpoint to query
-        _headers - the headers to send with each request - typically only has the API key
-    '''
-
     @staticmethod
     def __getPaginatedResponse__(_url, _headers, flags=""):
+        """
+        This function retrieves data from canvas, accounting for how canvas will split data into pages of ten
+        objects to minimise the cost of each request. (So our 100mb pull of assignments is split into smaller chunks)
+        Returns a list of dictionaries. This also is only used for *GET* requests
+        :param _url: the endpoint to query
+        :param _headers: the headers to send with each request - typically only has the API key
+        :return: the full response - merged in to a list of dicts
+        """
         _url += f"?{flags}"
         result = requests.get(_url, headers=_headers)
 
@@ -68,18 +70,17 @@ class Canvas:
 
         return results
 
-    '''
-    This function gets the common name from the assignment in canvas.
-    I am defining the common name as the short hand abbreviation for the assignment, so like
-    for Homework 7 - it should be HW7 but currently this is a quick and dirty implementation so it would read this as 
-    H7.
-    This is a problem bc if we have Homework 14 and Homework 1 they would both be H1 which isn't right. 
-    PARAMS:
-        _assignmentName - the canvas assignment name 
-    '''
-
     @staticmethod
     def __getCommonName__(_assignmentName):
+        """
+        This function gets the common name from the assignment in canvas.
+        I am defining the common name as the shorthand abbreviation for the assignment, so like
+        for Homework 7 - it should be HW7 but currently this is a quick and dirty implementation, so
+        it would read this as H7.
+        This is a problem bc if we have Homework 14 and Homework 1 they would both be H1 which isn't right.
+        :param _assignmentName: the canvas assignment name
+        :return: the common format name
+        """
         commonName = ""
 
         for ch in _assignmentName:
@@ -93,19 +94,18 @@ class Canvas:
 
         return commonName
 
-    '''
-    This function reads and the setting
-    '''
-
     def loadSettings(self, _configFile):
+        """
+        This function gets the config file as a dict, validates it, then updates the internal members.
+        :param _configFile: The config file we are using
+        """
         if type(_configFile) is not dict:
             raise TypeError("Invalid config file")
 
-        # if not _configFile["assignments"] or len(_configFile["assignments"]) == 0:
-        #     print("No assignments found")
-        #     return
-        if not _configFile['course_id'] or not _configFile['API_key'] or not _configFile['user_id'] or not _configFile[
-            'endpoint']:
+        if not _configFile['course_id'] \
+                or not _configFile['API_key'] \
+                or not _configFile['user_id'] \
+                or not _configFile['endpoint']:
             print("Invalid config file")
             return
 
@@ -117,22 +117,37 @@ class Canvas:
         if self.__validate__():
             print(f"Loaded class: {_configFile['class']}")
 
-    '''
-    This function gets the assignment groups from canvas, then formats them such that we only have the 
-    group name and the group id.
-    This allows us to not have to pull all 118 assignments from canvas when we will only need a few and know the groups.
-    EXAMPLE:
-        Pull from CSCI 101 SPR22
-        {
-        'Quizzes (6%)': 56566, 
-        'Gradescope': 55687, 
-        'Python Labs (6%)': 56567,
-        ...
-        }
-        where the first col is the group name and the second col is the canvas id
-    '''
+    def getAssignmentsFromConfig(self, _configFile):
+        """
+        This function reads in the assignments from the config file and updates the internal members.
+        First it validates that there is at least one assignment.
+        :param _configFile: the config file containing the assignments to be loaded
+        """
+        if type(_configFile) is not dict:
+            raise TypeError("Invalid config file")
+        if not _configFile["assignments"] or len(_configFile["assignments"]) == 0:
+            print("No assignments found")
+            return None
+
+        self.m_assignments = _configFile["assignments"]
+        print(f"Loaded {len(self.m_assignments)} assignments")
 
     def getAssignmentGroupsFromCanvas(self):
+        """
+        This function gets the assignment groups from canvas, then formats them such that we only have the
+        group name and the group id.
+        This allows us to not have to pull all 118 assignments from canvas when we will only need a few and know the groups.
+        :example:
+            Pull from CSCI 101 SPR22
+            {
+            'Quizzes (6%)': 56566,
+            'Gradescope': 55687,
+            'Python Labs (6%)': 56567,
+            ...
+            }
+            where the first col is the group name and the second col is the canvas id
+        :return: the formatted assignment groups
+        """
         # /api/v1/courses/:course_id/assignment_groups - gets all assignment groups
         if not self.__validate__():
             return None
@@ -141,7 +156,7 @@ class Canvas:
         header = {"Authorization": f"Bearer {self.API_KEY}"}
         result = self.__getPaginatedResponse__(url, header)
 
-        print(f"Returned {len(result)} assignment groups")
+        print(f"Retrieved {len(result)} assignment groups")
 
         assignmentGroups = dict()
 
@@ -151,6 +166,20 @@ class Canvas:
         return assignmentGroups
 
     def getAssignmentsFromCanvas(self, _assignmentGroups):
+        """
+        This function pulls assignments from canvas that it finds in the groups passed as parameters. It strips out
+        the unnecessary fields provided by the canvas api.
+        :example:
+            {
+                common_name: "HW8",
+                name: "HW8 - Hardware and Software',
+                id: "56383",
+                points: 6.0
+            },
+            ...
+        :param _assignmentGroups: The list of ids of the desired groups to pull from.
+        :return: formatted assignments
+        """
         # /api/v1/courses/:course_id/assignments - gets list of assignments in a course
         # /api/v1/courses/:course_id/assignment_groups/:assignment_group_id/assignments
         #  - gets list of assignments in a group
@@ -180,19 +209,31 @@ class Canvas:
 
         return parsedAssignments
 
-    def getAssignmentsFromConfig(self, _configFile):
-        if type(_configFile) is not dict:
-            raise TypeError("Invalid config file")
-        if not _configFile["assignments"] or len(_configFile["assignments"]) == 0:
-            print("No assignments found")
-            return None
-
-        self.m_assignments = _configFile["assignments"]
-        print(f"Loaded {len(self.m_assignments)} assignments")
-
-    def getStudents(self):
+    def getStudentsFromCanvas(self):
+        """
+        This function gets a list of users from canvas, filtering out the non-students. This will allow us to post
+        grades for students without needed to download the entire gradebook. Because the list of students changes
+        frequently as they add and drop classes, this is pulled before grades are posted every run. This will update
+        the student list internally.
+        """
         # /api/v1/courses/:course_id/users - get users for a course
-        pass
+        url = f"{self.ENDPOINT}/api/v1/courses/{self.COURSE_ID}/users"
+        header = {"Authorization": f"Bearer {self.API_KEY}"}
+        flags = "enrollment_type[]=student"
+
+        result = self.__getPaginatedResponse__(url, header, flags=flags)
+
+        print(f"Retrieved {len(result)} students")
+
+        for student in result:
+            parsedStudent = dict()
+            parsedStudent['name'] = student['name']
+            parsedStudent['id'] = student['id']
+            parsedStudent['sis_id'] = student['login_id']
+            self.m_students.append(parsedStudent)
+
+        # dataframes are a lot easier to work with - esp bc we dont have to write this out
+        self.m_students = pd.DataFrame(self.m_students)
 
     def getCourseList(self):
         # we are getting the list of course IDs here so we dont need to do a full validation
@@ -209,10 +250,11 @@ class Canvas:
         validCourses = []
 
         for course in result:
-            if len(course) == 2:  # if there is an error message it will only be two long
+            if len(course) == 2:  # if there is an error message it will only be two units long
+                # this error condition, in my experience, only comes up when a teacher deletes a course
                 continue
 
-            # filter out all student courses
+            # filter out all student courses - we only want the ta / teacher courses
             if course['enrollments'][0]['type'] not in validEnrollments:
                 continue
 
@@ -222,9 +264,11 @@ class Canvas:
             parsedCourseData['enrollment_type'] = course['enrollments'][0]['type']
             validCourses.append(parsedCourseData)
 
-        print(f"Found {len(validCourses)} valid courses")
+        print(f"Retrieved {len(validCourses)} valid courses")
 
         return validCourses
 
     def postAssignments(self):
         pass
+
+    def getStudents(self): return self.m_students
