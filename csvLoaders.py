@@ -97,7 +97,7 @@ def loadGradescope(_filename):
         gradescopeDF.at[i, 'Email'] = row['Email'].split('@')[0]  # get multipass out of email
         # this approach doesn't work as great if students aren't in gradescope with their correct emails, but I digress
     # change name to what canvas uses for slightly easier joining - all SIS id are guaranteed to be unique by ITS
-    gradescopeDF.rename(columns={'Email': 'SIS Login ID'}, inplace=True)
+    gradescopeDF.rename(columns={'Email': 'sis_id'}, inplace=True)
 
     # put names in format Last, First so that it matches canvas and special cases
     for i, row in gradescopeDF.iterrows():
