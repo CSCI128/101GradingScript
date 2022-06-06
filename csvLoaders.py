@@ -3,23 +3,22 @@ from statistics import mean
 import pandas as pd
 import os
 
-import canvasHelperFunctions as canvas
-
 # When dropping all the unnecessary rows, drop all but these guys ALWAYS.
 # Exceptions (like for canvas we want to drop all but the assignment we are posting) exist,
 # and are handled in each function
-CANVAS_NEVER_DROP = ['Student', 'ID', 'SIS Login ID', 'Section']
 GRADESCOPE_NEVER_DROP = ['Name', 'Email', 'Total Score', 'Status', 'Lateness']
 # Grace Period of 15 minutes
 GRADESCOPE_GRACE_PERIOD = 15 * 60
 
-'''
-This function attempts to locate the file in a few different places:
-./, ./grades/, ./canvas/, ./gradescope/
-'''
-
 
 def findFile(_filename):
+    """
+    This function attempts to locate the file in a few different places:
+    ./, ./grades/, ./canvas/, ./gradescope/
+
+    :param _filename: the file name to search for
+    :return: the file name with the found directory prepended
+    """
     directoriesToCheck = ["./", "./grades/", "./canvas/", "./gradescope/"]
 
     for directory in directoriesToCheck:
@@ -32,14 +31,14 @@ def findFile(_filename):
     return False
 
 
-'''
-This function validates that a CSV file with the name '_filename' exists 
-If it does, it loads it in to a Pandas dataframe to be returned. In the event of an error,
-an empty pandas dataframe is returned
-'''
-
-
 def loadCSV(_filename):
+    """
+    This function validates that a CSV file with the name '_filename' exists
+    If it does, it loads it in to a Pandas dataframe to be returned. In the event of an error,
+    an empty pandas dataframe is returned
+    :param _filename: the csv filename to load
+    :return: the dataframe from the csv or an empty dataframe if loaded failed
+    """
     print(f"Attempting to load {_filename}...")
 
     # TODO Add check to see if file is actually a CSV.
@@ -57,15 +56,13 @@ def loadCSV(_filename):
     return loadedData
 
 
-'''
-This function loads the selected gradescope CSV file, drops all unnecessary columns, 
-and modifies the existing columns to be more easily merged when the resulting CSV
-PARAMS:
-    _filename - the filename of the assignment to be graded
-'''
-
-
 def loadGradescope(_filename):
+    """
+    This function loads the selected gradescope CSV file, drops all unnecessary columns,
+    and modifies the existing columns to be more easily merged when the resulting CSV
+    :param _filename: the filename of the assignment to be graded
+    :return: the loaded gradescope dataframe
+    """
     gradescopeDF = loadCSV(_filename)
 
     if gradescopeDF.empty:
@@ -111,51 +108,14 @@ def loadGradescope(_filename):
     return gradescopeDF
 
 
-'''
-This function loads the selected canvas grade book, drops all assignments that are not selected,
-drops all unnecessary columns, and modifies the existing columns to be more easily merged.   
-PARAMS: 
-    _filename - the file name of the canvas grade book. A string 
-    _assignments - the *list* of assignments 
-'''
-
-
-def loadCanvas(_filename, _assignments):
-    if type(_assignments) is not list:
-        raise TypeError("loadCanvas(_filename, _assignments) -  _assignments MUST be a list." +
-                        f"Type is {type(_assignments)}")
-
-    canvasDF = loadCSV(_filename)
-    if canvasDF.empty:
-        print("Loading Canvas Grade book failed.")
-        return canvasDF
-
-    # map common assignment name to canvas name - is impractical to do this in a config
-    #  file because canvas gives each assignment an id that changes every year.
-
-    for i, assignment in enumerate(_assignments):
-        _assignments[i] = canvas.locateAssignment(canvasDF, assignment)
-
-    _assignments = [assignment for assignment in _assignments if assignment]  # remove failures from assignment list
-
-    # drop all unused columns - so every thing but the 'never drop' list and the now mapped assignments
-    for col in canvasDF.columns.values.tolist():
-        if col not in CANVAS_NEVER_DROP and col not in _assignments:
-            canvasDF = canvasDF.drop(columns=col)
-
-    print(_assignments)
-    print(canvasDF.columns.values.tolist())
-
-    return canvasDF
-
-
-'''
-This function loads the special cases file, drops all rows whose 'assignment' column does not correspond 
-to the selected assignment.
-'''
-
-
 def loadSpecialCases(_filename, _assignments):
+    """
+    This function loads the special cases file, drops all rows whose 'assignment' column does not correspond
+    to the selected assignment.
+    :param _filename: The file name of the special cases file
+    :param _assignments: the list of assignments to filter for
+    :return: the filtered special cases dataframe
+    """
     if type(_assignments) is not list:
         raise TypeError("loadSpecialCases(_filename, _assignments) -  _assignments MUST be a list." +
                         f"Type is {type(_assignments)}")
@@ -181,11 +141,13 @@ def loadSpecialCases(_filename, _assignments):
 
     return specialCasesDF
 
-'''
-This function loads the page flagging file, drops all rows whose assignment column does not correspond to the 
-selected assignment
-'''
-
 
 def loadPageFlagging(_filename, _assignment):
+    """
+    This function loads the page flagging file, drops all rows whose assignment column does not correspond to the
+    selected assignment
+    :param _filename:
+    :param _assignment:
+    :return:
+    """
     pass
