@@ -2,11 +2,15 @@ import math
 
 import pandas as pd
 
+from Canvas import Canvas
 
-def scaleScores(_gradescopeDF, _scaleFactor, assignmentPoints=None, maxScore=None, XCScaleFactor=None):
+
+def scaleScores(_gradescopeDF: pd.DataFrame, _scaleFactor: float,
+                assignmentPoints: float = None, maxScore: float = None, XCScaleFactor: float = None):
     """
     This function scales the scores by the scale factor. It also takes into account different extra credit scaling.
     This function does NOT consider lateness or page flagging in its calculations
+
     :param _gradescopeDF: the current grades for the current assigment
     :param _scaleFactor: the scaling to apply to each grade
     :param assignmentPoints: the total amount of *regular* *scaled* points the assignment has.
@@ -22,6 +26,8 @@ def scaleScores(_gradescopeDF, _scaleFactor, assignmentPoints=None, maxScore=Non
         _scaleFactor = 1, assignmentPoints = 5, XCScaleFactor = .25
     :return: the modified gradescope dataframe.
     """
+    if not isinstance(_gradescopeDF, pd.DataFrame):
+        raise TypeError("Gradescope grades MUST be passed as a Pandas DataFrame")
     if XCScaleFactor is None:
         XCScaleFactor = _scaleFactor
 
@@ -46,7 +52,7 @@ def scaleScores(_gradescopeDF, _scaleFactor, assignmentPoints=None, maxScore=Non
     return _gradescopeDF
 
 
-def scoreMissingAssignments(_gradescopeDF, score=0, exceptions=None):
+def scoreMissingAssignments(_gradescopeDF: pd.DataFrame, score=0, exceptions=None):
     """
     This function handles the students who didnt submit their work at the time that this script is being run.
     Supports not scoring missing work as well.
@@ -58,6 +64,9 @@ def scoreMissingAssignments(_gradescopeDF, score=0, exceptions=None):
 
     :return: the modified gradescope dataframe
     """
+    if not isinstance(_gradescopeDF, pd.DataFrame):
+        raise TypeError("Gradescope grades MUST be passed as a Pandas DataFrame")
+
     if exceptions is not None:
         raise AttributeError("Unable to process exceptions")
 
@@ -73,7 +82,7 @@ def scoreMissingAssignments(_gradescopeDF, score=0, exceptions=None):
     return _gradescopeDF
 
 
-def calculateLatePenalty(_gradescopeDF, _specialCasesDF, latePenalty=None):
+def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFrame, latePenalty: list[float] = None):
     """
     This function calculates the late penalty according to the special cases
     Returns modified gradescope dataframe and special cases dataframe
@@ -84,6 +93,11 @@ def calculateLatePenalty(_gradescopeDF, _specialCasesDF, latePenalty=None):
     :param _specialCasesDF: the special cases for the assignment being graded
     :param latePenalty: an array of floats that contains the score mods for the late penalty
     """
+    if not isinstance(_gradescopeDF, pd.DataFrame):
+        raise TypeError("Gradescope grades MUST be passed as a Pandas DataFrame")
+
+    if not isinstance(_specialCasesDF, pd.DataFrame):
+        raise TypeError("Special cases MUST be passed as a Pandas DataFrame")
     if latePenalty is None:
         latePenalty = [1, .8, .6, .4, 0]
 
@@ -132,3 +146,96 @@ def calculateLatePenalty(_gradescopeDF, _specialCasesDF, latePenalty=None):
     print(f"{latePenaltyStudents} late penalties were applied")
 
     return _gradescopeDF, _specialCasesDF
+
+
+def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFrame,
+                       _students: pd.DataFrame, _assignmentId: str):
+    """
+
+    :param _assignmentId:
+    :param _gradescopeDF:
+    :param _specialCasesDF:
+    :param _students:
+    :return:
+    """
+
+    if not isinstance(_gradescopeDF, pd.DataFrame):
+        raise TypeError("Gradescope Grades MUST be passed as a Pandas DataFrame")
+
+    if not isinstance(_specialCasesDF, pd.DataFrame):
+        raise TypeError("Special cases MUST be passed as a Pandas DataFrame")
+
+    if not isinstance(_students, pd.DataFrame):
+        raise TypeError("Students MUST be passed as a Pandas DataFrame")
+
+    if type(_assignmentId) is not str or len(_assignmentId) < 5:
+        raise TypeError("Assignment ID MUST be a string containing a valid Canvas assignment id")
+
+    gradedAssignment: dict = {}
+    _students['graded'] = False
+    for i, row in _students.iterrows():
+        # Handle the student not existing in gradescope in either gradescope or canvas
+        if len(_gradescopeDF.loc[_gradescopeDF['sis_id'] == row['sis_id']]) == 0:
+            continue
+
+        studentComment: str = ""
+        # get the student's special cases
+        studentSpecialCase: pd.DataFrame = _specialCasesDF.loc[_specialCasesDF['multipass'] == row['sis_id']]
+        # add a comment to the student's submission explaining any extension or special cases
+        if len(studentSpecialCase['extension_days']) != 0 and studentSpecialCase['extension_days'][0] > 0:
+            studentComment = f"Extended by {studentSpecialCase['extension_days'][0]} days."
+            if studentSpecialCase['extension_type'][0] == "Late Pass":
+                studentComment += f"\n{studentSpecialCase['extension_days'][0]} late passes used"
+
+        gradedAssignment[row['name']] = {
+            'id': row['id'],
+            'score': _gradescopeDF.loc[_gradescopeDF['sis_id'] == row['sis_id']]['Total Score'],
+            'comment': studentComment
+        }
+        _students.at[i, 'graded'] = True
+
+    ungradedStudents: pd.DataFrame = _students.loc[_students['graded'] == False]['name']
+    if len(ungradedStudents) != 0:
+        print("Warning")
+        print(f"\t...{len(ungradedStudents)} unmatched students")
+        for student in ungradedStudents['name']:
+            print(f"\t\t...{student} was not found")
+    else:
+        print("Done")
+
+    return gradedAssignment
+
+
+def createCanvasScoresForAssignments(_gradescopeAssignments: dict[str, pd.DataFrame],
+                                     _specialCasesDF: pd.DataFrame, _canvas: Canvas):
+    """
+
+    :param _gradescopeAssignments:
+    :param _specialCasesDF:
+    :param _canvas:
+    :return:
+    :example:
+        {
+            assignment_id: {
+                name: {
+                    id:
+                    score:
+                    comments:
+                },
+            }
+        }
+
+    """
+    # TODO Handle _gradescopeAssignments
+    if not isinstance(_specialCasesDF, pd.DataFrame):
+        raise TypeError("Special cases MUST be passed as a Pandas DataFrame")
+
+    if not isinstance(_canvas, Canvas):
+        raise TypeError("Canvas must be an instance of the Canvas API Wrapper")
+
+    students: pd.DataFrame = _canvas.getStudents()
+
+    assignmentsToPost: dict[str, dict[str, any]] = {}
+
+    print(f"Creating scores for {len(students)} students across {len(_gradescopeAssignments)} assignments...", end='')
+
