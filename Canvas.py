@@ -236,6 +236,11 @@ class Canvas:
         self.m_students = pd.DataFrame(self.m_students)
 
     def getCourseList(self):
+        """
+        Retrieves the list of courses from canvas that the user in enrolled in, then filters out the student ones
+        to ensure that they will have write access.
+        :return: The list of courses with the course ID, name, and enrollment type
+        """
         # we are getting the list of course IDs here so we dont need to do a full validation
         # api/v1/users/:userid/courses
         if not self.API_KEY or not self.USER_ID:
@@ -269,6 +274,9 @@ class Canvas:
         return validCourses
 
     def postAssignments(self):
+        # POST /api/v1/sections/:section_id/assignments/:assignment_id/submissions/update_grades
+        # payload = f"grade_data[25685][posted_grade]=6.0&grade_data[25685][text_comment]=Nice Work!&" \
+        # f"grade_data[30691][posted_grade]=0.0&grade_data[30691][text_comment]=No Submission&"
         pass
 
     def getStudents(self): return self.m_students
