@@ -10,12 +10,12 @@ class Canvas:
     """
 
     def __init__(self, _API_KEY="", _USER_ID="", _COURSE_ID="", _ENDPOINT=""):
-        self.API_KEY = _API_KEY
-        self.USER_ID = _USER_ID
-        self.COURSE_ID = _COURSE_ID
-        self.ENDPOINT = _ENDPOINT
-        self.m_students = []
-        self.m_assignments = []
+        self.API_KEY: str = _API_KEY
+        self.USER_ID: str = _USER_ID
+        self.COURSE_ID: str = _COURSE_ID
+        self.ENDPOINT: str = _ENDPOINT
+        self.m_students: pd.DataFrame = pd.DataFrame()
+        self.m_assignments: pd.DataFrame = pd.DataFrame()
 
     def __validate__(self):
         """
@@ -129,7 +129,8 @@ class Canvas:
             print("No assignments found")
             return None
 
-        self.m_assignments = _configFile["assignments"]
+        self.m_assignments = pd.DataFrame(_configFile["assignments"])
+        print(self.m_assignments.head())
         print(f"Loaded {len(self.m_assignments)} assignments")
 
     def getAssignmentGroupsFromCanvas(self):
@@ -278,5 +279,27 @@ class Canvas:
         # payload = f"grade_data[25685][posted_grade]=6.0&grade_data[25685][text_comment]=Nice Work!&" \
         # f"grade_data[30691][posted_grade]=0.0&grade_data[30691][text_comment]=No Submission&"
         pass
+
+    def getAssignmentIDsFromCommonName(self, _assignmentList: list[str]):
+        """
+        This function takes in the assignment common names and generates a map of the assignment common name to its ID.
+        This is to make the user interface slightly simpler for the user
+        :param _assignmentList:
+        :return:
+        """
+        assignmentMap: dict[str, str] = {}
+        for commonName in _assignmentList:
+            filteredAssignments: pd.DataFrame = self.m_assignments.loc[self.m_assignments['common_name'] == commonName]
+            if len(filteredAssignments) > 1:
+                print(f"Many assignments matching {commonName} found. Please enter the id the correct one")
+                for i, assignment in filteredAssignments.iterrows():
+                    print(f"{assignment['id']}\t{assignment['name']}\t{assignment['points']}")
+                correctID = str(input("(id: 123456): "))
+                assignmentMap[commonName] = correctID
+                continue
+
+            assignmentMap[commonName] = filteredAssignments['id'][0]
+
+        return assignmentMap
 
     def getStudents(self): return self.m_students

@@ -207,9 +207,10 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
 
 
 def createCanvasScoresForAssignments(_gradescopeAssignments: dict[str, pd.DataFrame],
-                                     _specialCasesDF: pd.DataFrame, _canvas: Canvas):
+                                     _specialCasesDF: pd.DataFrame, _canvas: Canvas, _assignments: list[str]):
     """
 
+    :param _assignments:
     :param _gradescopeAssignments:
     :param _specialCasesDF:
     :param _canvas:
@@ -237,5 +238,15 @@ def createCanvasScoresForAssignments(_gradescopeAssignments: dict[str, pd.DataFr
 
     assignmentsToPost: dict[str, dict[str, any]] = {}
 
-    print(f"Creating scores for {len(students)} students across {len(_gradescopeAssignments)} assignments...", end='')
+    print(f"Creating scores for {len(students)} students across {len(_gradescopeAssignments)} assignments...")
 
+    assignmentMap: dict[str, str] = _canvas.getAssignmentIDsFromCommonName(_assignments)
+
+    for commonName, assignmentID in assignmentMap.items():
+        print(f"\tGrading {commonName} - {assignmentID} for {len(students)} students...", end='')
+        assignmentsToPost[assignmentID] = \
+            createCanvasScores(_gradescopeAssignments[commonName],
+                               _specialCasesDF.loc[_specialCasesDF['assignment'] == commonName],
+                               students, assignmentID)
+
+    return assignmentsToPost
