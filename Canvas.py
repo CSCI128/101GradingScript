@@ -61,7 +61,7 @@ class Canvas:
         for pResponse in pageResponse:
             results.append(pResponse)
 
-        while result.links['current']['url'] != result.links['last']['url']:
+        while 'last' not in result.links or result.links['current']['url'] != result.links['last']['url']:
             result = requests.get(result.links['next']['url'], headers=_headers)
             pageResponse = result.json()
 
@@ -130,7 +130,6 @@ class Canvas:
             return None
 
         self.m_assignments = pd.DataFrame(_configFile["assignments"])
-        print(self.m_assignments.head())
         print(f"Loaded {len(self.m_assignments)} assignments")
 
     def getAssignmentGroupsFromCanvas(self):
@@ -220,21 +219,32 @@ class Canvas:
         # /api/v1/courses/:course_id/users - get users for a course
         url = f"{self.ENDPOINT}/api/v1/courses/{self.COURSE_ID}/users"
         header = {"Authorization": f"Bearer {self.API_KEY}"}
-        flags = "enrollment_type[]=student"
+        # These flags increase the query size to 100 students and filters out all non students
+        flags = "per_page=100&&enrollment_type[]=student"
+
+        print("Downloading updated Canvas roaster....")
+        print("\t(This may take a few minutes depending on the enrollment size of the course)")
 
         result = self.__getPaginatedResponse__(url, header, flags=flags)
 
-        print(f"Retrieved {len(result)} students")
+        print(f"\tDownloaded {len(result)} students")
+        print("...Done")
 
+        studentList: list[dict] = []
+        # So when the registrar adds students to a class, we don't have their CWID or multipass
+        #  Naturally, this isn't documented anywhere so through trial and error i found the fields that will always
+        #  be included when we pull the students.
         for student in result:
+            if 'email' not in student or 'name' not in student or 'id' not in student:
+                continue
             parsedStudent = dict()
             parsedStudent['name'] = student['name']
             parsedStudent['id'] = student['id']
-            parsedStudent['sis_id'] = student['login_id']
-            self.m_students.append(parsedStudent)
+            parsedStudent['sis_id'] = student['email'].split('@')[0]
+            studentList.append(parsedStudent)
 
         # dataframes are a lot easier to work with - esp bc we dont have to write this out
-        self.m_students = pd.DataFrame(self.m_students)
+        self.m_students = pd.DataFrame(studentList)
 
     def getCourseList(self):
         """
@@ -298,7 +308,7 @@ class Canvas:
                 assignmentMap[commonName] = correctID
                 continue
 
-            assignmentMap[commonName] = filteredAssignments['id'][0]
+            assignmentMap[commonName] = str(filteredAssignments['id'].values[0])
 
         return assignmentMap
 
