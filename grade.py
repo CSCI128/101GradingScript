@@ -174,7 +174,7 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
     gradedAssignment: dict = {}
     _students['graded'] = False
     for i, row in _students.iterrows():
-        # Handle the student not existing in gradescope in either gradescope or canvas
+        # Handle the student not existing in gradescope
         if len(_gradescopeDF.loc[_gradescopeDF['sis_id'] == row['sis_id']]) == 0:
             continue
 
@@ -182,24 +182,25 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
         # get the student's special cases
         studentSpecialCase: pd.DataFrame = _specialCasesDF.loc[_specialCasesDF['multipass'] == row['sis_id']]
         # add a comment to the student's submission explaining any extension or special cases
-        if len(studentSpecialCase['extension_days']) != 0 and studentSpecialCase['extension_days'][0] > 0:
-            studentComment = f"Extended by {studentSpecialCase['extension_days'][0]} days."
-            if studentSpecialCase['extension_type'][0] == "Late Pass":
-                studentComment += f"\n{studentSpecialCase['extension_days'][0]} late passes used"
+        if len(studentSpecialCase['extension_days']) != 0 and studentSpecialCase['extension_days'].values[0] > 0:
+            studentComment = f"Extended by {studentSpecialCase['extension_days'].values[0]} days."
+            # Let students know where their late passes have gone
+            if studentSpecialCase['extension_type'].values[0] == "Late Pass":
+                studentComment += f"\n{studentSpecialCase['extension_days'].values[0]} late passes used"
 
         gradedAssignment[row['name']] = {
-            'id': row['id'],
-            'score': _gradescopeDF.loc[_gradescopeDF['sis_id'] == row['sis_id']]['Total Score'],
+            'id': str(row['id']),
+            'score': str(_gradescopeDF.loc[_gradescopeDF['sis_id'] == row['sis_id']]['Total Score'].values[0]),
             'comment': studentComment
         }
         _students.at[i, 'graded'] = True
 
-    ungradedStudents: pd.DataFrame = _students.loc[_students['graded'] == False]['name']
+    ungradedStudents: pd.Series = _students.loc[_students['graded'] == False]['name']
     if len(ungradedStudents) != 0:
         print("Warning")
-        print(f"\t...{len(ungradedStudents)} unmatched students")
-        for student in ungradedStudents['name']:
-            print(f"\t\t...{student} was not found")
+        print(f"\t\t...{len(ungradedStudents)} unmatched students")
+        for student in ungradedStudents:
+            print(f"\t\t\t...{student} was not found")
     else:
         print("Done")
 
@@ -227,7 +228,10 @@ def createCanvasScoresForAssignments(_gradescopeAssignments: dict[str, pd.DataFr
         }
 
     """
-    # TODO Handle _gradescopeAssignments
+    if type(_gradescopeAssignments) is not dict:
+        raise TypeError("Gradescope assignments must be passed as a dict mapping the common name to the assignment as "
+                        "a Pandas DataFrame")
+
     if not isinstance(_specialCasesDF, pd.DataFrame):
         raise TypeError("Special cases MUST be passed as a Pandas DataFrame")
 
@@ -249,4 +253,5 @@ def createCanvasScoresForAssignments(_gradescopeAssignments: dict[str, pd.DataFr
                                _specialCasesDF.loc[_specialCasesDF['assignment'] == commonName],
                                students, assignmentID)
 
+    print("...Done")
     return assignmentsToPost
