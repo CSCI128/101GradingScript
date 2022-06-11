@@ -77,7 +77,6 @@ def loadGradescope(_filename):
         if col not in GRADESCOPE_NEVER_DROP:
             gradescopeDF = gradescopeDF.drop(columns=col)
 
-    # print(gradescope.columns.values.tolist())
     # Process and apply grace period. Add days counter.
     for i, row in gradescopeDF.iterrows():
 
@@ -90,21 +89,14 @@ def loadGradescope(_filename):
         # converting everything to minutes to make this once step easier
         lateness = (float(hours) * 60) + float(minutes) + (float(seconds) / 60)
         if lateness <= GRADESCOPE_GRACE_PERIOD:
-            gradescopeDF.at[i, 'Lateness'] = f"0:0:0"  # set format to H:M:S (Hours, Minutes, Seconds)
+            gradescopeDF.at[i, 'Lateness'] = f"0:0:0"
 
     # Get multipass from email
     for i, row in gradescopeDF.iterrows():
-        gradescopeDF.at[i, 'Email'] = row['Email'].split('@')[0]  # get multipass out of email
+        gradescopeDF.at[i, 'Email'] = row['Email'].split('@')[0]
         # this approach doesn't work as great if students aren't in gradescope with their correct emails, but I digress
     # change name to what canvas uses for slightly easier joining - all SIS id are guaranteed to be unique by ITS
     gradescopeDF.rename(columns={'Email': 'sis_id'}, inplace=True)
-
-    # put names in format Last, First so that it matches canvas and special cases
-    for i, row in gradescopeDF.iterrows():
-        # this will only capture the first name and last name. If the student has any other names - they will be ignored
-        firstName, lastName = row['Name'].split(' ')[0:2]  # only get the first two elements
-        gradescopeDF.at[i, 'Name'] = f"{lastName}, {firstName}"
-
     return gradescopeDF
 
 
@@ -150,4 +142,4 @@ def loadPageFlagging(_filename, _assignment):
     :param _assignment:
     :return:
     """
-    pass
+    raise NotImplementedError("Page flagging is not yet implemented")
