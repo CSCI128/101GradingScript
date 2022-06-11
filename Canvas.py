@@ -6,8 +6,10 @@ import json
 class Canvas:
     """
     This class helps us interface directly with canvas and abstracts some weirdness away
-    Importantly - this class supports paginated responses and handles them elegantly
+    Importantly - this class supports paginated responses and handles them elegantly -
+    regardless of the size of the response
     """
+    s_unknownAssignments: int = 0
 
     def __init__(self, _API_KEY="", _USER_ID="", _COURSE_ID="", _ENDPOINT=""):
         self.API_KEY: str = _API_KEY
@@ -39,11 +41,12 @@ class Canvas:
         return True
 
     @staticmethod
-    def __getPaginatedResponse__(_url, _headers, flags=""):
+    def __getPaginatedResponse__(_url: str, _headers: str, flags: str = "") -> list[dict[any, any]]:
         """
         This function retrieves data from canvas, accounting for how canvas will split data into pages of ten
         objects to minimise the cost of each request. (So our 100mb pull of assignments is split into smaller chunks)
         Returns a list of dictionaries. This also is only used for *GET* requests
+
         :param _url: the endpoint to query
         :param _headers: the headers to send with each request - typically only has the API key
         :return: the full response - merged in to a list of dicts
@@ -53,7 +56,7 @@ class Canvas:
 
         if result.status_code != 200:
             print(f"An error occurred. HTML code {result.status_code}")
-            return
+            return []
 
         results = []
         pageResponse = result.json()
@@ -63,6 +66,11 @@ class Canvas:
 
         while 'last' not in result.links or result.links['current']['url'] != result.links['last']['url']:
             result = requests.get(result.links['next']['url'], headers=_headers)
+
+            if result.status_code != 200:
+                print(f"An error occurred. HTML code {result.status_code}")
+                return []
+
             pageResponse = result.json()
 
             for pResponse in pageResponse:
@@ -71,11 +79,18 @@ class Canvas:
         return results
 
     @staticmethod
-    def __getCommonName__(_assignmentName):
+    def __postRequest__(_url, _headers, _data):
+        pass
+
+    @staticmethod
+    def __getCommonName__(_assignmentName: str) -> str:
         """
         This function gets the common name from the assignment in canvas.
         I am defining the common name as the shorthand abbreviation for the assignment,
-        so HW 1 would read as HW1, Lab 14 would read as L14
+        so HW 1 would read as HW1, Lab 14 would read as L14.
+        If this function can't derive a common name it returns UKN + the current unknown counter.
+        UKN stands for UnKowN - clever, right?
+
         :param _assignmentName: the canvas assignment name
         :return: the common format name
         """
@@ -91,11 +106,16 @@ class Canvas:
             if len(commonName) >= 4:
                 break
 
+        if not commonName:
+            Canvas.s_unknownAssignments += 1
+            commonName = "UKN" + str(Canvas.s_unknownAssignments)
+
         return commonName
 
     def loadSettings(self, _configFile):
         """
         This function gets the config file as a dict, validates it, then updates the internal members.
+
         :param _configFile: The config file we are using
         """
         if type(_configFile) is not dict:
@@ -319,4 +339,5 @@ class Canvas:
 
         return assignmentMap
 
-    def getStudents(self): return self.m_students
+    def getStudents(self):
+        return self.m_students
