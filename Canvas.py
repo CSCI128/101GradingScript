@@ -74,22 +74,21 @@ class Canvas:
     def __getCommonName__(_assignmentName):
         """
         This function gets the common name from the assignment in canvas.
-        I am defining the common name as the shorthand abbreviation for the assignment, so like
-        for Homework 7 - it should be HW7 but currently this is a quick and dirty implementation, so
-        it would read this as H7.
-        This is a problem bc if we have Homework 14 and Homework 1 they would both be H1 which isn't right.
+        I am defining the common name as the shorthand abbreviation for the assignment,
+        so HW 1 would read as HW1, Lab 14 would read as L14
         :param _assignmentName: the canvas assignment name
         :return: the common format name
         """
+        commonNameNumbers: str = "".join([ch for ch in _assignmentName if str(ch).isdigit()])
         commonName = ""
 
         for ch in _assignmentName:
             if str.isupper(ch):
                 commonName += ch
             if str.isdigit(ch):
-                commonName += ch
+                commonName += commonNameNumbers
                 break
-            if len(commonName) > 4:
+            if len(commonName) >= 4:
                 break
 
         return commonName
@@ -228,14 +227,16 @@ class Canvas:
         result = self.__getPaginatedResponse__(url, header, flags=flags)
 
         print(f"\tDownloaded {len(result)} students")
-        print("...Done")
 
         studentList: list[dict] = []
         # So when the registrar adds students to a class, we don't have their CWID or multipass
         #  Naturally, this isn't documented anywhere so through trial and error i found the fields that will always
         #  be included when we pull the students.
+        print("\tProcessing students...", end='')
+        invalidStudents: int = 0
         for student in result:
             if 'email' not in student or 'name' not in student or 'id' not in student:
+                invalidStudents += 1
                 continue
             parsedStudent = dict()
             parsedStudent['name'] = student['name']
@@ -243,8 +244,14 @@ class Canvas:
             parsedStudent['sis_id'] = student['email'].split('@')[0]
             studentList.append(parsedStudent)
 
-        # dataframes are a lot easier to work with - esp bc we dont have to write this out
+        if invalidStudents != 0:
+            print("Warning")
+            print(f"\t\t{invalidStudents} students were invalid")
+        else:
+            print("Done")
+        # dataframes are a lot easier to work with
         self.m_students = pd.DataFrame(studentList)
+        print("...Done")
 
     def getCourseList(self):
         """
