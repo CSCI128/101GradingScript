@@ -1,6 +1,5 @@
 import pandas as pd
 import requests
-import json
 
 
 class Canvas:
@@ -311,7 +310,7 @@ class Canvas:
 
         return validCourses
 
-    def postAssignments(self):
+    def postAssignment(self, _assignment: str, _batchedAssignment: list[str]):
         # POST /api/v1/sections/:section_id/assignments/:assignment_id/submissions/update_grades
         # payload = f"grade_data[25685][posted_grade]=6.0&grade_data[25685][text_comment]=Nice Work!&" \
         # f"grade_data[30691][posted_grade]=0.0&grade_data[30691][text_comment]=No Submission&"
