@@ -100,24 +100,17 @@ def loadGradescope(_filename):
     return gradescopeDF
 
 
-def loadSpecialCases(_filename, _assignments):
+def loadSpecialCases(_filename):
     """
     This function loads the special cases file, drops all rows whose 'assignment' column does not correspond
     to the selected assignment.
     :param _filename: The file name of the special cases file
-    :param _assignments: the list of assignments to filter for
     :return: the filtered special cases dataframe
     """
-    if type(_assignments) is not list:
-        raise TypeError("loadSpecialCases(_filename, _assignments) -  _assignments MUST be a list." +
-                        f"Type is {type(_assignments)}")
     specialCasesDF = loadCSV(_filename)
     if specialCasesDF.empty:
         print("Loading special cases failed")
         return specialCasesDF
-
-    # Narrows down special cases to only include the assignments that we are posting
-    specialCasesDF = specialCasesDF.loc[specialCasesDF['assignment'].isin(_assignments)]
 
     # Get multipass from email
     for i, row in specialCasesDF.iterrows():
@@ -126,7 +119,6 @@ def loadSpecialCases(_filename, _assignments):
     # Change column name to accurately reflect what is in it
     specialCasesDF.rename(columns={'email': 'multipass'}, inplace=True)
 
-    print(f"Loaded {len(specialCasesDF['multipass'])} special cases for assignment(s) {_assignments}")
     # account for stats error if no special cases exist
     if len(specialCasesDF['multipass']) > 0:
         print(f"Average extension is {mean(specialCasesDF['extension_days'])} day(s)")
