@@ -26,6 +26,10 @@ def run():
 
     assignmentsToPost = score.createCanvasScoresForAssignments({"HW2": hw2Grades}, specialCases, canvas, ["HW2"])
 
+    post.updateSpecialCases(specialCases)
+    post.writeGrades({"HW2": hw2Grades})
+    post.postToCanvas(canvas, assignmentsToPost)
+
 
 if __name__ == "__main__":
     run()

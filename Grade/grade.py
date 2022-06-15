@@ -132,7 +132,7 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         hoursLate = float(hours) + (float(minutes) / 60) + (float(seconds) / 60 / 60)
         # this is safe - if no students are found in the special cases, then it will be empty
         #  and the loop will just not run.
-        if row['sis_id'] in _specialCasesDF.loc[_specialCasesDF['assignment'] == [_assignment], 'multipass'].values.tolist():
+        if row['sis_id'] in _specialCasesDF.loc[_assignment == _specialCasesDF['assignment'], 'multipass'].values.tolist():
             # reduce the number of hours that a submission is late
             #  accomplished by subtracting the days that a submission was extended by
             hoursLate -= (_specialCasesDF.loc[

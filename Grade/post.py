@@ -35,12 +35,12 @@ def postToCanvas(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]], stud
 
     print(f"Posting scores for {len(studentsToPost)} students across {len(_canvasScores)} assignments...")
 
-    for assignment, grades in _canvasScores.values():
+    for assignment, grades in _canvasScores.items():
         batchedAssignments: list[str] = []
         currentBatch: str = ""
         currentBatchSize: int = 0
 
-        for student, grade in grades.values():
+        for student, grade in grades.items():
             # We don't know how many scores can be posted at once to canvas because
             #  naturally, it isn't documented anywhere. So I am playing it safe and limiting the size that we will
             #  be sending to canvas at a time.
@@ -51,10 +51,10 @@ def postToCanvas(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]], stud
             # TODO Validate grade
             if currentBatchSize == 0:
                 currentBatch += f"grade_data[{grade['id']}][posted_grade]={grade['score']}&" \
-                                f"grade_data[{grade['id']}][text_comment]={grade['comments']}"
+                                f"grade_data[{grade['id']}][text_comment]={grade['comment']}"
             else:
                 currentBatch += f"&grade_data[{grade['id']}][posted_grade]={grade['score']}&" \
-                                f"grade_data[{grade['id']}][text_comment]={grade['comments']}"
+                                f"grade_data[{grade['id']}][text_comment]={grade['comment']}"
 
             currentBatchSize += 1
         # Handle if we have a non-multiple of 50 currently batched - this check worked bc current batch size
@@ -62,7 +62,7 @@ def postToCanvas(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]], stud
         if currentBatchSize != 0:
             batchedAssignments.append(currentBatch)
 
-        print(f"\tPosting scores for id {assignment} in {len(batchedAssignments)} batches...", end='')
+        print(f"\tPosting scores for id {assignment} in {len(batchedAssignments)} batches...")
         if not _canvas.postAssignment(assignment, batchedAssignments):
             print("...Failed")
             return False
@@ -82,7 +82,7 @@ def writeGrades(_gradescopeAssignments: dict[str, pd.DataFrame]):
         return False
 
     print(f"Writing {len(_gradescopeAssignments)} assignments to file...")
-    for assignment, grades in _gradescopeAssignments.values():
+    for assignment, grades in _gradescopeAssignments.items():
         print(f"\tWriting {assignment} to file...", end='')
         fullPath = f"./gradescope/graded/{assignment}_graded.csv"
         try:
