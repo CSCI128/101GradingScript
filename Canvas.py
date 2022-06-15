@@ -78,8 +78,25 @@ class Canvas:
         return results
 
     @staticmethod
-    def __postRequest__(_url, _headers, _data):
-        pass
+    def __postRequest__(_url, _headers, _data) -> dict[any, any]:
+        """
+        This function makes a post request to the server.
+        This function returns a URL to get the success-ness of the request as
+        canvas post requests are async and the server responds with a URL to see what the status of
+        the request is. Getting that data is anonymous, and as such, does not require an auth token to get.
+        This function does NOT currently support paginated responses.
+        :param _url: the endpoint to send the request to
+        :param _headers: the headers to send (like the authorization token)
+        :param _data: the data to send with the post request. Is passed as a -D in curl. Currently, only form data is
+        supported as that it what canvas uses.
+        :return: The URL of the status OR the response from the server.
+        """
+        result = requests.post(_url, headers=_headers, data=_data)
+        if result.status_code != 200:
+            print(f"An error occurred while making request. HTTP code is {result.status_code}")
+            return {}
+
+        return result.json()
 
     @staticmethod
     def __getCommonName__(_assignmentName: str) -> str:
@@ -310,11 +327,32 @@ class Canvas:
 
         return validCourses
 
-    def postAssignment(self, _assignment: str, _batchedAssignment: list[str]):
-        # POST /api/v1/sections/:section_id/assignments/:assignment_id/submissions/update_grades
+    def postAssignment(self, _assignment: str, _batchedAssignment: list[str]) -> bool:
+        """
+        This function post assignments to Canvas in batches of at most 50. It waits for a response from the
+        API and validates to check if the posting was successful or not.
+        :param _assignment: the assigment *ID* to be posted. Must be the ID and *NOT* the name
+        :param _batchedAssignment: the list of assignments
+        :return: True on a success False on a failure
+        """
+        # POST /v1/courses/{course_id}/assignments/{assignment_id}/submissions/update_grades
         # payload = f"grade_data[25685][posted_grade]=6.0&grade_data[25685][text_comment]=Nice Work!&" \
         # f"grade_data[30691][posted_grade]=0.0&grade_data[30691][text_comment]=No Submission&"
-        pass
+
+        url = f"{self.ENDPOINT}/api/v1/courses/{self.COURSE_ID}/assignments/{_assignment}/submissions/update_grades"
+        header = {"Authorization": f"Bearer {self.API_KEY}"}
+
+        responses: list[dict[any, any]] = []
+        for i, batch in enumerate(_batchedAssignment):
+            print(f"\t\tPosting batch {i} / {len(_batchedAssignment)}...", end='')
+            responses.append(self.__postRequest__(url, header, batch))
+            if len(responses[i]) == 0:
+                print(f"Failed\n\tPosting failed on batch {i+1} / {len(_batchedAssignment)}")
+                return False
+            print("Pending")
+            # TODO validate the response
+
+        return True
 
     def getAssignmentIDsFromCommonName(self, _assignmentList: list[str]):
         """
