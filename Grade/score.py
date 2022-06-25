@@ -50,6 +50,12 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
             if studentSpecialCase['extension_type'].values[0] == "Late Pass":
                 studentComment += f"\n{studentSpecialCase['extension_days'].values[0]} late passes used"
 
+        if _gradescopeDF.loc[_gradescopeDF['sis_id'] == row['sis_id']]['lateness_comment'].values[0]:
+            # Handle if the student has another comment already
+            if studentComment:
+                studentComment += "\n"
+            studentComment += _gradescopeDF.loc[_gradescopeDF['sis_id'] == row['sis_id']]['lateness_comment'].values[0]
+
         score = _gradescopeDF.loc[_gradescopeDF['sis_id'] == row['sis_id']]['Total Score'].values[0]
 
         gradedAssignment[row['name']] = {
