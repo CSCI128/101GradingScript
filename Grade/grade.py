@@ -62,7 +62,7 @@ def scaleScores(_gradescopeDF: pd.DataFrame, _scaleFactor: float,
     return _gradescopeDF
 
 
-def scoreMissingAssignments(_gradescopeDF: pd.DataFrame, score=0, exceptions=None):
+def scoreMissingAssignments(_gradescopeDF: pd.DataFrame, score: float = 0, exceptions=None):
     """
    Description
     --------
@@ -121,6 +121,7 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         latePenalty = [1, .8, .6, .4, 0]
 
     print(f"Applying late penalties for {_assignment}...")
+    _gradescopeDF['lateness_comment'] = ""
     specialCaseStudents = 0
     latePenaltyStudents = 0
     for i, row in _gradescopeDF.iterrows():
@@ -160,8 +161,10 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         _gradescopeDF.at[i, 'Total Score'] *= latePenalty[daysLate]
 
         # add students who actually received a penalty to a list
+        #  and update comment stating where points went to
         if daysLate != 0:
             latePenaltyStudents += 1
+            _gradescopeDF.at[i, 'lateness_comment'] = f"-{1 - latePenalty[daysLate]}%: {daysLate} Days late"
 
     # the only possible case here is if a student has a special case requested but was not found in gradescope
     if specialCaseStudents != len(_specialCasesDF['multipass']):

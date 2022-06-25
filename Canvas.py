@@ -344,7 +344,7 @@ class Canvas:
 
         responses: list[dict[any, any]] = []
         for i, batch in enumerate(_batchedAssignment):
-            print(f"\t\tPosting batch {i} / {len(_batchedAssignment)}...", end='')
+            print(f"\t\tPosting batch {i+1} / {len(_batchedAssignment)}...", end='')
             responses.append(self.__postRequest__(url, header, batch))
             if len(responses[i]) == 0:
                 print(f"Failed\n\tPosting failed on batch {i+1} / {len(_batchedAssignment)}")
@@ -378,3 +378,6 @@ class Canvas:
 
     def getStudents(self):
         return self.m_students
+
+    def getAssignments(self):
+        return self.m_assignments
