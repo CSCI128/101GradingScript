@@ -35,14 +35,14 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
 
     gradedAssignment: dict = {}
     _students['graded'] = False
-    for i, row in _students.iterrows():
+    for i, student in _students.iterrows():
         # Handle the student not existing in gradescope
-        if len(_gradescopeDF.loc[_gradescopeDF['sis_id'] == row['sis_id']]) == 0:
+        if len(_gradescopeDF.loc[_gradescopeDF['multipass'] == student['sis_id']]) == 0:
             continue
 
         studentComment: str = ""
         # get the student's special cases
-        studentSpecialCase: pd.DataFrame = _specialCasesDF.loc[_specialCasesDF['multipass'] == row['sis_id']]
+        studentSpecialCase: pd.DataFrame = _specialCasesDF.loc[_specialCasesDF['multipass'] == student['sis_id']]
         # add a comment to the student's submission explaining any extension or special cases
         if len(studentSpecialCase['extension_days']) != 0 and studentSpecialCase['extension_days'].values[0] > 0:
             studentComment = f"Extended by {studentSpecialCase['extension_days'].values[0]} days."
@@ -50,16 +50,17 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
             if studentSpecialCase['extension_type'].values[0] == "Late Pass":
                 studentComment += f"\n{studentSpecialCase['extension_days'].values[0]} late passes used"
 
-        if _gradescopeDF.loc[_gradescopeDF['sis_id'] == row['sis_id']]['lateness_comment'].values[0]:
+        if _gradescopeDF.loc[_gradescopeDF['multipass'] == student['sis_id']]['lateness_comment'].values[0]:
             # Handle if the student has another comment already
             if studentComment:
                 studentComment += "\n"
-            studentComment += _gradescopeDF.loc[_gradescopeDF['sis_id'] == row['sis_id']]['lateness_comment'].values[0]
+            studentComment += _gradescopeDF.loc[_gradescopeDF['multipass'] == student['sis_id']]['lateness_comment'].values[0]
 
-        score = _gradescopeDF.loc[_gradescopeDF['sis_id'] == row['sis_id']]['Total Score'].values[0]
+        score = _gradescopeDF.loc[_gradescopeDF['multipass'] == student['sis_id']]['Total Score'].values[0]
 
-        gradedAssignment[row['name']] = {
-            'id': str(row['id']),
+        gradedAssignment[student['id']] = {
+            'name': student['name'],
+            'id': str(student['id']),
             # If we chose to not score missing students - post an empty score to canvas
             'score': str(score) if score is not None else "",
             'comment': studentComment
@@ -90,7 +91,9 @@ def createCanvasScoresForAssignments(_gradescopeAssignments: dict[str, pd.DataFr
     --------
     {
      assignment_id: {
-      name: {
+      id: {
+       name:
+
        id:
 
        score:

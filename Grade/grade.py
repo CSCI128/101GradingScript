@@ -128,37 +128,36 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         # Skip over students who didn't submit - they already got a zero
         if row['Status'] == "Missing":
             continue
-        # Gradescope store lateness in H:M:S format
-        hours, minutes, seconds = row['Lateness'].split(':')
-        hoursLate = float(hours) + (float(minutes) / 60) + (float(seconds) / 60 / 60)
+
+        hoursLate = row['hours_late']
         # this is safe - if no students are found in the special cases, then it will be empty
         #  and the loop will just not run.
-        if row['sis_id'] in _specialCasesDF.loc[_assignment == _specialCasesDF['assignment'], 'multipass'].values.tolist():
+        if row['multipass'] in _specialCasesDF.loc[_assignment == _specialCasesDF['assignment'], 'multipass'].values.tolist():
             # reduce the number of hours that a submission is late
             #  accomplished by subtracting the days that a submission was extended by
             hoursLate -= (_specialCasesDF.loc[
                 (_specialCasesDF['assignment'] == [_assignment]) &
-                (_specialCasesDF['multipass'] == row['sis_id'])
+                (_specialCasesDF['multipass'] == row['multipass'])
                 , 'extension_days'].values[0]) * 24
             if hoursLate < 0:
                 hoursLate = 0
 
             _specialCasesDF.loc[
-                (_specialCasesDF['multipass'] == row['sis_id']) &
+                (_specialCasesDF['multipass'] == row['multipass']) &
                 (_specialCasesDF['assignment'] == [_assignment])
                 , 'handled'] = True
 
             specialCaseStudents += 1
 
-        # clac days late
+        # Convert to days rounding up
         daysLate = math.ceil(hoursLate / 24)
-        # if over penalty
+
         if daysLate > len(latePenalty) - 1:
             daysLate = len(latePenalty) - 1
 
         # actually applying the late penalty
         #  looking up in the list what it should be with the index as the index and daysLate directly correspond
-        _gradescopeDF.at[i, 'Total Score'] *= latePenalty[daysLate]
+        _gradescopeDF.at[i, 'Total Score'] = round(_gradescopeDF.at[i, 'Total Score'] * latePenalty[daysLate], 3)
 
         # add students who actually received a penalty to a list
         #  and update comment stating where points went to
