@@ -59,7 +59,11 @@ def loadCSV(_filename):
 def loadGradescope(_filename):
     """
     This function loads the selected gradescope CSV file, drops all unnecessary columns,
-    and modifies the existing columns to be more easily merged when the resulting CSV
+    and converts the columns to the format that will be used later.
+
+    Remaps Lateness (H:M:S) -> Lateness -> (converts to hours) -> hours_late
+    Remaps Email -> (converts to multipass) -> multipass
+
     :param _filename: the filename of the assignment to be graded
     :return: the loaded gradescope dataframe
     """
@@ -82,21 +86,30 @@ def loadGradescope(_filename):
 
         # Handles edge case where student has not submitted. Lateness will NaN rather than 0:0:0.
         if type(row['Lateness']) is not str:
+            gradescopeDF.at[i, 'Lateness'] = "0"
             continue
 
         # In the gradescope CSV, lateness is store as H:M:S (Hours, Minutes, Seconds).
         hours, minutes, seconds = row['Lateness'].split(':')
         # converting everything to minutes to make this once step easier
         lateness = (float(hours) * 60) + float(minutes) + (float(seconds) / 60)
+
         if lateness <= GRADESCOPE_GRACE_PERIOD:
-            gradescopeDF.at[i, 'Lateness'] = f"0:0:0"
+            gradescopeDF.at[i, 'Lateness'] = "0"
+        else:
+            lateness /= 60  # convert back to hours so we dont have to do the conversion later
+            gradescopeDF.at[i, 'Lateness'] = f"{lateness}"
+
+    gradescopeDF.rename(columns={'Lateness': 'hours_late'}, inplace=True)
+    # All NaN values should be handled at this point
+    gradescopeDF = gradescopeDF.astype({'hours_late': "float"}, copy=False)
 
     # Get multipass from email
     for i, row in gradescopeDF.iterrows():
         gradescopeDF.at[i, 'Email'] = row['Email'].split('@')[0]
         # this approach doesn't work as great if students aren't in gradescope with their correct emails, but I digress
-    # change name to what canvas uses for slightly easier joining - all SIS id are guaranteed to be unique by ITS
-    gradescopeDF.rename(columns={'Email': 'sis_id'}, inplace=True)
+
+    gradescopeDF.rename(columns={'Email': 'multipass'}, inplace=True)
     return gradescopeDF
 
 
@@ -112,16 +125,11 @@ def loadSpecialCases(_filename):
         print("Loading special cases failed")
         return specialCasesDF
 
+    # We want to non-destructively get the multipass so that it is easier to use the spreadsheet later
+    specialCasesDF['multipass'] = ""
     # Get multipass from email
     for i, row in specialCasesDF.iterrows():
-        specialCasesDF.at[i, 'email'] = row['email'].split("@")[0]
-
-    # Change column name to accurately reflect what is in it
-    specialCasesDF.rename(columns={'email': 'multipass'}, inplace=True)
-
-    # account for stats error if no special cases exist
-    if len(specialCasesDF['multipass']) > 0:
-        print(f"Average extension is {mean(specialCasesDF['extension_days'])} day(s)")
+        specialCasesDF.at[i, 'multipass'] = row['email'].split("@")[0]
 
     return specialCasesDF
 

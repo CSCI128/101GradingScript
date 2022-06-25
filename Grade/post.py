@@ -12,22 +12,65 @@ serve as a safety mechanism.
 
 from Canvas import Canvas
 import pandas as pd
+from datetime import date
 import os
 
 BATCH_SIZE = 50
 
 
-def postToCanvas(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]], studentsToPost: list[str] = None):
+def writeUpdatedGradebookToFile(_canvasScores: dict[str, dict[any, any]], _students: pd.DataFrame):
+    formattedGradebook: pd.DataFrame = pd.DataFrame(
+        {'Student': _students['name'],
+         'ID': _students['id'],
+         'SIS Login ID': _students['sis_id']
+         }
+    )
+    for assignment, grades in _canvasScores.items():
+        formattedGradebook[assignment] = ""
+        # this is a really inefficient way to the do this but the other option is creating a new dataframe for each
+        #  assignment and joining them. Which is even worse imo
+        for i, row in formattedGradebook.iterrows():
+            try:
+                formattedGradebook.at[i, assignment] = grades[row['ID']]['score']
+            except KeyError:
+                pass
+
+    print(f"Updated gradebook is ready to be written to file. ")
+    print("Please confirm: This operation will write the updated canvas gradebook to file"
+          " and CAN NOT be reversed.")
+
+    usrConfirm = str(input("(y/n): "))
+
+    if usrConfirm.lower() != 'y':
+        return False
+
+    print(f"Writing updated gradebook to file...")
+    todayDate: str = date.today().strftime("%y-%m-%d")
+
+    fullPath = f"./canvas/graded/canvas_{todayDate}_graded.csv"
+    try:
+        with open(fullPath, "w") as fileOut:
+            formattedGradebook.to_csv(path_or_buf=fileOut, index=False)
+    except:
+        print(f"\t\tWriting {fullPath} failed.")
+        print("...Failed")
+        return False
+    print("...Done")
+
+
+def postToCanvas(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]], studentsToPost: pd.DataFrame = None):
     if studentsToPost is not None and type(studentsToPost) is not list:
         raise TypeError("Students to post MUST be a list of student names")
 
     if studentsToPost is None:
         studentsToPost = _canvas.getStudents()
 
+    writeUpdatedGradebookToFile(_canvasScores, studentsToPost)
+
     print(f"{len(_canvasScores)} assignments are ready to be posted to Canvas.")
 
     print("Please confirm: This operation will post the current scores to Canvas and"
-          "and CAN NOT be reversed")
+          " CAN NOT be reversed")
 
     usrConfirm = str(input("(y/n): "))
     if usrConfirm.lower() != 'y':
@@ -74,7 +117,7 @@ def postToCanvas(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]], stud
 def writeGrades(_gradescopeAssignments: dict[str, pd.DataFrame]):
     print(f"{len(_gradescopeAssignments)} assignment grades are ready to be written to file.")
     print("Please confirm: This operation will write the updated graded assignments to file"
-          "and CAN NOT be reversed.")
+          " and CAN NOT be reversed.")
 
     usrConfirm = str(input("(y/n): "))
 
@@ -87,7 +130,7 @@ def writeGrades(_gradescopeAssignments: dict[str, pd.DataFrame]):
         fullPath = f"./gradescope/graded/{assignment}_graded.csv"
         try:
             with open(fullPath, "w") as fileOut:
-                grades.to_csv(path_or_buf=fileOut)
+                grades.to_csv(path_or_buf=fileOut, index=False)
         except:
             print("Failed")
             print(f"\t\tWriting {fullPath} failed.")
@@ -100,7 +143,7 @@ def writeGrades(_gradescopeAssignments: dict[str, pd.DataFrame]):
 
 
 def updateSpecialCases(_specialCases: pd.DataFrame):
-    _specialCases.rename(columns={'multipass': 'email'}, inplace=True)
+    _specialCases.drop(columns={'multipass'}, inplace=True)
 
     print("Special cases are ready to be updated. Please enter the file name to write")
     fileName = str(input("(file_name.csv): "))
@@ -113,7 +156,7 @@ def updateSpecialCases(_specialCases: pd.DataFrame):
         print(f"Warning: this operation will overwrite {completePath}")
 
     print("Please confirm: This operation will write the updated special cases to file"
-          "and CAN NOT be reversed.")
+          " and CAN NOT be reversed.")
     usrConfirm = str(input("(y/n): "))
 
     if usrConfirm.lower() != 'y':
@@ -122,7 +165,7 @@ def updateSpecialCases(_specialCases: pd.DataFrame):
     print(f"Writing special cases to file...")
     try:
         with open(completePath, 'w') as fileOut:
-            _specialCases.to_csv(path_or_buf=fileOut)
+            _specialCases.to_csv(path_or_buf=fileOut, index=False)
     except:
         print(f"\tWriting {completePath} to file failed.")
         print("...Failed")
