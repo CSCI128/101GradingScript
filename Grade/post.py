@@ -18,17 +18,19 @@ import os
 BATCH_SIZE = 50
 
 
-def writeUpdatedGradebookToFile(_canvasScores: dict[str, dict[any, any]], _students: pd.DataFrame):
+def writeUpdatedGradebookToFile(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]], _students: pd.DataFrame):
     formattedGradebook: pd.DataFrame = pd.DataFrame(
         {'Student': _students['name'],
          'ID': _students['id'],
-         'SIS Login ID': _students['sis_id']
+         'SIS User ID': "",
+         'SIS Login ID': _students['sis_id'],
+         'Section': ""
          }
     )
-    for assignment, grades in _canvasScores.items():
+    for assignmentID, grades in _canvasScores.items():
+        assignment = _canvas.getAssignmentFromID(int(assignmentID))
+        assignment = f"{assignment['name'].values[0]} ({assignmentID})"
         formattedGradebook[assignment] = ""
-        # this is a really inefficient way to the do this but the other option is creating a new dataframe for each
-        #  assignment and joining them. Which is even worse imo
         for i, row in formattedGradebook.iterrows():
             try:
                 formattedGradebook.at[i, assignment] = grades[row['ID']]['score']
@@ -65,7 +67,7 @@ def postToCanvas(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]], stud
     if studentsToPost is None:
         studentsToPost = _canvas.getStudents()
 
-    writeUpdatedGradebookToFile(_canvasScores, studentsToPost)
+    writeUpdatedGradebookToFile(_canvas, _canvasScores, studentsToPost)
 
     print(f"{len(_canvasScores)} assignments are ready to be posted to Canvas.")
 

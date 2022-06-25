@@ -132,11 +132,12 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         hoursLate = row['hours_late']
         # this is safe - if no students are found in the special cases, then it will be empty
         #  and the loop will just not run.
-        if row['multipass'] in _specialCasesDF.loc[_assignment == _specialCasesDF['assignment'], 'multipass'].values.tolist():
+        if row['multipass'] in _specialCasesDF.loc[
+            _assignment == _specialCasesDF['assignment'], 'multipass'].values.tolist():
             # reduce the number of hours that a submission is late
             #  accomplished by subtracting the days that a submission was extended by
             hoursLate -= (_specialCasesDF.loc[
-                (_specialCasesDF['assignment'] == [_assignment]) &
+                (_specialCasesDF['assignment'] == _assignment) &
                 (_specialCasesDF['multipass'] == row['multipass'])
                 , 'extension_days'].values[0]) * 24
             if hoursLate < 0:
@@ -144,7 +145,7 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
 
             _specialCasesDF.loc[
                 (_specialCasesDF['multipass'] == row['multipass']) &
-                (_specialCasesDF['assignment'] == [_assignment])
+                (_specialCasesDF['assignment'] == _assignment)
                 , 'handled'] = True
 
             specialCaseStudents += 1
@@ -163,20 +164,23 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         #  and update comment stating where points went to
         if daysLate != 0:
             latePenaltyStudents += 1
-            _gradescopeDF.at[i, 'lateness_comment'] = f"-{(1 - latePenalty[daysLate])*100:02.0f}%: {daysLate} Days late"
+            _gradescopeDF.at[
+                i, 'lateness_comment'] = f"-{(1 - latePenalty[daysLate]) * 100:02.0f}%25: {daysLate} Days late"
 
     # the only possible case here is if a student has a special case requested but was not found in gradescope
-    if specialCaseStudents != len(_specialCasesDF['multipass']):
+    if specialCaseStudents != len(_specialCasesDF.loc[_specialCasesDF['assignment'] == _assignment, 'multipass']):
         print("\tNot all special cases where handled automatically...")
         # '!= True' here because it may be null or false depending on who entered the special case
         #  != because this is a bool mask - not a normal boolean expression
-        for student in _specialCasesDF.loc[_specialCasesDF['handled'] != True, 'student_name'].values.tolist():
+        for student in _specialCasesDF.loc[(_specialCasesDF['handled'] != True)
+                                           & (_specialCasesDF['assignment'] == _assignment),
+                                           'student_name'].values.tolist():
             print(f"\t\t...{student} was not found in Gradescope")
 
     print(f"\t{specialCaseStudents} special cases were applied for {_assignment}")
     print(f"\t{latePenaltyStudents} late penalties were applied for {_assignment}")
 
-    if specialCaseStudents != len(_specialCasesDF['multipass']):
+    if specialCaseStudents != len(_specialCasesDF.loc[_specialCasesDF['assignment'] == _assignment, 'multipass']):
         print("...Warning")
     else:
         print("...Done")

@@ -376,6 +376,15 @@ class Canvas:
 
         return assignmentMap
 
+    def getAssignmentFromID(self, _id: int):
+        if type(_id) is not int:
+            try:
+                _id = int(_id)
+            except ValueError:
+                raise AttributeError("Unable to to parse assignment ID")
+
+        return self.m_assignments.loc[self.m_assignments['id'] == _id]
+
     def getStudents(self):
         return self.m_students
 
