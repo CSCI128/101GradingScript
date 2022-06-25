@@ -164,7 +164,7 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         #  and update comment stating where points went to
         if daysLate != 0:
             latePenaltyStudents += 1
-            _gradescopeDF.at[i, 'lateness_comment'] = f"-{1 - latePenalty[daysLate]}%: {daysLate} Days late"
+            _gradescopeDF.at[i, 'lateness_comment'] = f"-{(1 - latePenalty[daysLate])*100:02.0f}%: {daysLate} Days late"
 
     # the only possible case here is if a student has a special case requested but was not found in gradescope
     if specialCaseStudents != len(_specialCasesDF['multipass']):

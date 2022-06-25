@@ -100,6 +100,8 @@ def writeGrades(_gradescopeAssignments: dict[str, pd.DataFrame]):
 
 
 def updateSpecialCases(_specialCases: pd.DataFrame):
+    _specialCases.rename(columns={'multipass': 'email'}, inplace=True)
+
     print("Special cases are ready to be updated. Please enter the file name to write")
     fileName = str(input("(file_name.csv): "))
 
