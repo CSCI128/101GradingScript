@@ -27,8 +27,10 @@ def writeUpdatedGradebookToFile(_canvas: Canvas, _canvasScores: dict[str, dict[a
          'Section': ""
          }
     )
+    assignmentsInGradebook: str = ""
     for assignmentID, grades in _canvasScores.items():
         assignment = _canvas.getAssignmentFromID(int(assignmentID))
+        assignmentsInGradebook += f"_{assignment['common_name'].values[0]}"
         assignment = f"{assignment['name'].values[0]} ({assignmentID})"
         formattedGradebook[assignment] = ""
         for i, row in formattedGradebook.iterrows():
@@ -47,9 +49,9 @@ def writeUpdatedGradebookToFile(_canvas: Canvas, _canvasScores: dict[str, dict[a
         return False
 
     print(f"Writing updated gradebook to file...")
-    todayDate: str = date.today().strftime("%y-%m-%d")
+    todayDate: str = date.today().strftime("%d-%m-%y")
 
-    fullPath = f"./canvas/graded/canvas_{todayDate}_graded.csv"
+    fullPath = f"./canvas/graded/canvas_{todayDate}{assignmentsInGradebook}_graded.csv"
     try:
         with open(fullPath, "w", newline='\n') as fileOut:
             formattedGradebook.to_csv(path_or_buf=fileOut, index=False)
