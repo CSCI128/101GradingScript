@@ -51,7 +51,7 @@ def writeUpdatedGradebookToFile(_canvas: Canvas, _canvasScores: dict[str, dict[a
 
     fullPath = f"./canvas/graded/canvas_{todayDate}_graded.csv"
     try:
-        with open(fullPath, "w") as fileOut:
+        with open(fullPath, "w", newline='\n') as fileOut:
             formattedGradebook.to_csv(path_or_buf=fileOut, index=False)
     except:
         print(f"\t\tWriting {fullPath} failed.")
@@ -131,7 +131,7 @@ def writeGrades(_gradescopeAssignments: dict[str, pd.DataFrame]):
         print(f"\tWriting {assignment} to file...", end='')
         fullPath = f"./gradescope/graded/{assignment}_graded.csv"
         try:
-            with open(fullPath, "w") as fileOut:
+            with open(fullPath, "w", newline='\n') as fileOut:
                 grades.to_csv(path_or_buf=fileOut, index=False)
         except:
             print("Failed")
@@ -166,7 +166,7 @@ def updateSpecialCases(_specialCases: pd.DataFrame):
 
     print(f"Writing special cases to file...")
     try:
-        with open(completePath, 'w') as fileOut:
+        with open(completePath, 'w', newline='\n') as fileOut:
             _specialCases.to_csv(path_or_buf=fileOut, index=False)
     except:
         print(f"\tWriting {completePath} to file failed.")
