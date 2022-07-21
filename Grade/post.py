@@ -6,7 +6,7 @@ to Canvas. It will also update the special cases file with the handled / not han
 
 **AFTER GRADES ARE POSTED, THEY NEED TO BE MANUALLY PUBLISHED**
 
-That functionality *is* supported by the Canvas API and can be added, but, for now, I am keeping it this way to
+That functionality *is* supported by the Canvas api and can be added, but, for now, I am keeping it this way to
 serve as a safety mechanism.
 """
 
@@ -14,6 +14,7 @@ from Canvas import Canvas
 import pandas as pd
 from datetime import date
 import os
+from FileHelpers.csvWriter import csvWriter
 
 BATCH_SIZE = 50
 
@@ -52,14 +53,14 @@ def writeUpdatedGradebookToFile(_canvas: Canvas, _canvasScores: dict[str, dict[a
     todayDate: str = date.today().strftime("%d-%m-%y")
 
     fullPath = f"./canvas/graded/canvas_{todayDate}{assignmentsInGradebook}_graded.csv"
-    try:
-        with open(fullPath, "w", newline='\n') as fileOut:
-            formattedGradebook.to_csv(path_or_buf=fileOut, index=False)
-    except:
+
+    if not csvWriter(fullPath, formattedGradebook):
         print(f"\t\tWriting {fullPath} failed.")
         print("...Failed")
         return False
+
     print("...Done")
+    return True
 
 
 def postToCanvas(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]], studentsToPost: pd.DataFrame = None):
@@ -132,10 +133,7 @@ def writeGrades(_gradescopeAssignments: dict[str, pd.DataFrame]):
     for assignment, grades in _gradescopeAssignments.items():
         print(f"\tWriting {assignment} to file...", end='')
         fullPath = f"./gradescope/graded/{assignment}_graded.csv"
-        try:
-            with open(fullPath, "w", newline='\n') as fileOut:
-                grades.to_csv(path_or_buf=fileOut, index=False)
-        except:
+        if not csvWriter(fullPath, grades):
             print("Failed")
             print(f"\t\tWriting {fullPath} failed.")
             print("...Failed")
@@ -167,6 +165,7 @@ def updateSpecialCases(_specialCases: pd.DataFrame):
         return False
 
     print(f"Writing special cases to file...")
+    # TODO update to use excel files
     try:
         with open(completePath, 'w', newline='\n') as fileOut:
             _specialCases.to_csv(path_or_buf=fileOut, index=False)

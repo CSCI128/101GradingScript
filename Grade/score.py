@@ -117,7 +117,7 @@ def createCanvasScoresForAssignments(_gradescopeAssignments: dict[str, pd.DataFr
         raise TypeError("Special cases MUST be passed as a Pandas DataFrame")
 
     if not isinstance(_canvas, Canvas):
-        raise TypeError("Canvas must be an instance of the Canvas API Wrapper")
+        raise TypeError("Canvas must be an instance of the Canvas api Wrapper")
 
     students: pd.DataFrame = _canvas.getStudents()
 
