@@ -11,7 +11,7 @@ def locateConfigFiles():
     """
 
     configFileName = [f"./config/{f}" for f in os.listdir("./config/") if
-                      os.path.isfile(f"./config/{f}") and ".json" in f]
+                      os.path.isfile(f"./config/{f}") and f[len(f) - 4:] == "json"]
     return len(configFileName), configFileName
 
 
@@ -30,12 +30,12 @@ def readConfig(_configFileName):
 def createNewConfig():
     """
     Creates a new config file.
-    Config file must contain an API key,
+    Config file must contain an api key,
     the course ID, the user ID, and the canvas endpoint.
     It also must contain the assignment list.
     This function walks the user through the creation, and builds a new config file to be saved and loaded.
     """
-    apiKey = str(input("Enter your Canvas API key: "))
+    apiKey = str(input("Enter your Canvas api key: "))
     userId = str(input("Enter your Canvas user id: "))
     endpoint = str(input("Enter your Canvas endpoint: "))
     canvas = Canvas(_API_KEY=apiKey, _USER_ID=userId, _ENDPOINT=endpoint)
