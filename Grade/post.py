@@ -15,6 +15,7 @@ import pandas as pd
 from datetime import date
 import os
 from FileHelpers.csvWriter import csvWriter
+from FileHelpers.excelWriter import writeSpecialCases
 
 BATCH_SIZE = 50
 
@@ -144,18 +145,12 @@ def writeGrades(_gradescopeAssignments: dict[str, pd.DataFrame]):
     return True
 
 
-def updateSpecialCases(_specialCases: pd.DataFrame):
-    _specialCases.drop(columns={'multipass'}, inplace=True)
-
+def updateSpecialCases(_specialCasesDF: pd.DataFrame):
     print("Special cases are ready to be updated. Please enter the file name to write")
-    fileName = str(input("(file_name.csv): "))
+    fileName = str(input("(file_name.xlsx): "))
 
-    completePath: str = "./" + fileName
-    if ".csv" not in completePath:
-        completePath += ".csv"
-
-    if os.path.exists(completePath) and os.path.isfile(completePath):
-        print(f"Warning: this operation will overwrite {completePath}")
+    if os.path.exists(fileName) and os.path.isfile(fileName):
+        print(f"Warning: this operation will overwrite {fileName}")
 
     print("Please confirm: This operation will write the updated special cases to file"
           " and CAN NOT be reversed.")
@@ -165,12 +160,8 @@ def updateSpecialCases(_specialCases: pd.DataFrame):
         return False
 
     print(f"Writing special cases to file...")
-    # TODO update to use excel files
-    try:
-        with open(completePath, 'w', newline='\n') as fileOut:
-            _specialCases.to_csv(path_or_buf=fileOut, index=False)
-    except:
-        print(f"\tWriting {completePath} to file failed.")
+    if not writeSpecialCases(fileName, _specialCasesDF):
+        print(f"\tWriting updated special cases tp '{fileName}' failed.")
         print("...Failed")
         return False
 

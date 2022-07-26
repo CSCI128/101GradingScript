@@ -1,9 +1,7 @@
 import pandas as pd
-import fileHelper
+import FileHelpers.fileHelper as fileHelper
 
-raise NotImplementedError("Excel Handling is not implemented")
-
-DEFAULT_SPECIAL_CASES_SEARCH_PATH = "special_cases/special_cases.xlxs"
+DEFAULT_SPECIAL_CASES_SEARCH_PATH = "special_cases/special_cases.xlsx"
 
 
 def loadExcel(_filename, promptIfError: bool = False, directoriesToCheck: list[str] = None):
@@ -46,6 +44,16 @@ def loadSpecialCases():
     if specialCasesDF.empty:
         print("Loading special cases failed")
         return specialCasesDF
+
+    # if for some reason excel makes these into bools - convert back to strings
+    for i, row in specialCasesDF.iterrows():
+        if row['handled'] == True:
+            specialCasesDF.at[i, 'handled'] = "TRUE"
+        elif row['handled'] == False:
+            specialCasesDF.at[i, 'handled'] = "FALSE"
+
+    # weird edge case with excel - it parses the spaces in names as unicode \xa0 - which is a pain - changing to a _
+    specialCasesDF.columns = specialCasesDF.columns.str.replace('\xa0', '_')
 
     # We want to non-destructively get the multipass so that it is easier to use the spreadsheet later
     specialCasesDF['multipass'] = ""
