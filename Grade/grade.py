@@ -127,13 +127,29 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
     for i, row in _gradescopeDF.iterrows():
         # Skip over students who didn't submit - they already got a zero
         if row['Status'] == "Missing":
+            if row['multipass'] in _specialCasesDF.loc[_assignment == _specialCasesDF['assignment'], 'multipass'].values.tolist():
+                _specialCasesDF.loc[
+                    (_specialCasesDF['multipass'] == row['multipass']) &
+                    (_specialCasesDF['assignment'] == _assignment), 'handled'] = "FALSE"
+
+                _specialCasesDF.loc[
+                    (_specialCasesDF['multipass'] == row['multipass']) &
+                    (_specialCasesDF['assignment'] == _assignment), 'grader_notes'] = "No Submission"
             continue
 
         hoursLate = row['hours_late']
         # this is safe - if no students are found in the special cases, then it will be empty
         #  and the loop will just not run.
-        if row['multipass'] in _specialCasesDF.loc[
-            _assignment == _specialCasesDF['assignment'], 'multipass'].values.tolist():
+        if row['multipass'] in _specialCasesDF.loc[_assignment == _specialCasesDF['assignment'], 'multipass'].values.tolist():
+            if not row['approved_by']:
+                _specialCasesDF.loc[
+                    (_specialCasesDF['multipass'] == row['multipass']) &
+                    (_specialCasesDF['assignment'] == _assignment), 'handled'] = "FALSE"
+
+                _specialCasesDF.loc[
+                    (_specialCasesDF['multipass'] == row['multipass']) &
+                    (_specialCasesDF['assignment'] == _assignment), 'grader_notes'] = "Special Case is Not Approved"
+                continue
             # reduce the number of hours that a submission is late
             #  accomplished by subtracting the days that a submission was extended by
             hoursLate -= (_specialCasesDF.loc[
@@ -146,7 +162,7 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
             _specialCasesDF.loc[
                 (_specialCasesDF['multipass'] == row['multipass']) &
                 (_specialCasesDF['assignment'] == _assignment)
-                , 'handled'] = True
+                , 'handled'] = "TRUE"
 
             specialCaseStudents += 1
 
