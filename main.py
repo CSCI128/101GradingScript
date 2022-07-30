@@ -1,8 +1,7 @@
 import pandas as pd
 
-import csvLoaders
-import csvLoaders as ld
-from Grade import grade, score, post
+from FileHelpers import csvLoaders
+from Grade import post, score, grade
 from Canvas import Canvas
 import config
 

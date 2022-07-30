@@ -20,13 +20,13 @@ class Canvas:
 
     def __validate__(self):
         """
-        This function checks to see if we have everything we need to make API calls to canvas.
+        This function checks to see if we have everything we need to make api calls to canvas.
         RETURNS:
             False - if something is invalid
             True - if everything is defined correctly and *looks* like it should work
         """
         if not self.API_KEY:
-            print("API key is invalid")
+            print("api key is invalid")
             return False
         if not self.USER_ID or not self.USER_ID.isdigit():
             print("User ID is invalid")
@@ -47,7 +47,7 @@ class Canvas:
         Returns a list of dictionaries. This also is only used for *GET* requests
 
         :param _url: the endpoint to query
-        :param _headers: the headers to send with each request - typically only has the API key
+        :param _headers: the headers to send with each request - typically only has the api key
         :return: the full response - merged in to a list of dicts
         """
         _url += f"?{flags}"
@@ -330,7 +330,7 @@ class Canvas:
     def postAssignment(self, _assignment: str, _batchedAssignment: list[str]) -> bool:
         """
         This function post assignments to Canvas in batches of at most 50. It waits for a response from the
-        API and validates to check if the posting was successful or not.
+        api and validates to check if the posting was successful or not.
         :param _assignment: the assigment *ID* to be posted. Must be the ID and *NOT* the name
         :param _batchedAssignment: the list of assignments
         :return: True on a success False on a failure
