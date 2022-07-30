@@ -154,15 +154,15 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
             #  accomplished by subtracting the days that a submission was extended by
             hoursLate -= (_specialCasesDF.loc[
                 (_specialCasesDF['assignment'] == _assignment) &
-                (_specialCasesDF['multipass'] == row['multipass'])
-                , 'extension_days'].values[0]) * 24
+                (_specialCasesDF['multipass'] == row['multipass']),
+                'extension_days'].values[0]) * 24
             if hoursLate < 0:
                 hoursLate = 0
 
             _specialCasesDF.loc[
                 (_specialCasesDF['multipass'] == row['multipass']) &
-                (_specialCasesDF['assignment'] == _assignment)
-                , 'handled'] = "TRUE"
+                (_specialCasesDF['assignment'] == _assignment),
+                'handled'] = "TRUE"
 
             specialCaseStudents += 1
 

@@ -117,7 +117,8 @@ def excelWriter(_filename: str, _data: (StyleFrame, pd.DataFrame)) -> bool:
         except IOError as e:
             print(f"Unable to write '{_filename}' to file due to {e}")
             return False
-    else:
-        return False
+        else:
+            print(f"Unsupported data type. Type is: {type(_data)}")
+            return False
 
     return True

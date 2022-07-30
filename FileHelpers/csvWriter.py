@@ -2,7 +2,7 @@ import pandas as pd
 import csv
 
 
-def csvWriter(_filename: str, _data: pd.DataFrame | list) -> bool:
+def csvWriter(_filename: str, _data: (pd.DataFrame, list)) -> bool:
     if _filename is None or _data is None:
         raise AttributeError("Both _filename AND _data must be defined")
 
@@ -18,12 +18,15 @@ def csvWriter(_filename: str, _data: pd.DataFrame | list) -> bool:
             print(f"Unable to write '{_filename}' to file due to {e}")
             return False
 
-    if isinstance(_data, pd.DataFrame):
+    elif isinstance(_data, pd.DataFrame):
         try:
             with open(_filename, "w", newline='\n') as fileOut:
                 _data.to_csv(path_or_buf=fileOut, index=False)
         except IOError as e:
             print(f"Unable to write '{_filename}' to file due to {e}")
             return False
+    else:
+        print(f"Unsupported data type. Type is: {type(_data)}")
+        return False
 
     return True
