@@ -1,0 +1,71 @@
+import pandas as pd
+import FileHelpers.fileHelper as fileHelper
+
+DEFAULT_SPECIAL_CASES_SEARCH_PATH = "special_cases/special_cases.xlsx"
+
+
+def loadExcel(_filename, promptIfError: bool = False, directoriesToCheck: list[str] = None):
+    """
+    This function validates that an excel file with the name '_filename' exists
+    If it does, it loads it in to a Pandas dataframe to be returned. In the event of an error,
+    an empty pandas dataframe is returned
+    :param directoriesToCheck: fileHelper.findFile
+    :param promptIfError: fileHelper.findFile
+    :param _filename: the excel filename to load
+    :return: the dataframe from the excel file or an empty dataframe if loaded failed
+    """
+    print(f"Attempting to load {_filename}...")
+
+    _filename = fileHelper.findFile(_filename, promptIfError, directoriesToCheck)
+    if not _filename:
+        print("...Error")
+        return pd.DataFrame()
+
+    loadedData = pd.read_excel(_filename, engine="openpyxl")
+
+    print(f"...Loaded successfully from {_filename}")
+    # maybe print stats about file here? idk.
+    return loadedData
+
+
+def loadSpecialCases():
+    """
+    This function loads the special cases file, drops all rows whose 'assignment' column does not correspond
+    to the selected assignment.
+    This function attempts to automatically load special cases from "./special_cases/special_cases.xlsx" or
+    :return: the special cases dataframe
+    """
+    specialCasesDF = loadExcel(DEFAULT_SPECIAL_CASES_SEARCH_PATH, promptIfError=False, directoriesToCheck=["./"])
+
+    if specialCasesDF.empty:
+        print("Failed to automatically load special cases file. Please enter file name")
+        usrIn = str(input("(./path/to/special_cases.xlxs): "))
+        specialCasesDF = loadExcel(usrIn, promptIfError=True)
+    if specialCasesDF.empty:
+        print("Loading special cases failed")
+        return specialCasesDF
+
+    # if for some reason excel makes these into bools - convert back to strings
+    for i, row in specialCasesDF.iterrows():
+        if row['handled'] == True:
+            specialCasesDF.at[i, 'handled'] = "TRUE"
+        elif row['handled'] == False:
+            specialCasesDF.at[i, 'handled'] = "FALSE"
+
+    # weird edge case with excel - it parses the spaces in names as unicode \xa0 - which is a pain - changing to a _
+    specialCasesDF.columns = specialCasesDF.columns.str.replace('\xa0', '_')
+
+    # We want to non-destructively get the multipass so that it is easier to use the spreadsheet later
+    specialCasesDF['multipass'] = ""
+
+    # Get multipass from email
+    for i, row in specialCasesDF.iterrows():
+        specialCasesDF.at[i, 'multipass'] = row['email'].split("@")[0]
+
+    # Set the date to be a date
+    specialCasesDF['new_due_date'] = pd.to_datetime(specialCasesDF['new_due_date'])
+
+    # set the extension days to be an int
+    specialCasesDF['extension_days'] = specialCasesDF['extension_days'].apply(pd.to_numeric)
+
+    return specialCasesDF

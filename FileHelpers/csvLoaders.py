@@ -1,7 +1,5 @@
-from statistics import mean
-
 import pandas as pd
-import os
+import fileHelper
 
 # When dropping all the unnecessary rows, drop all but these guys ALWAYS.
 # Exceptions (like for canvas we want to drop all but the assignment we are posting) exist,
@@ -11,40 +9,19 @@ GRADESCOPE_NEVER_DROP = ['Name', 'Email', 'Total Score', 'Status', 'Lateness']
 GRADESCOPE_GRACE_PERIOD = 15 * 60
 
 
-def findFile(_filename):
-    """
-    This function attempts to locate the file in a few different places:
-    ./, ./grades/, ./canvas/, ./gradescope/
-
-    :param _filename: the file name to search for
-    :return: the file name with the found directory prepended
-    """
-    directoriesToCheck = ["./", "./grades/", "./canvas/", "./gradescope/"]
-
-    for directory in directoriesToCheck:
-        print(f"\tChecking \'{directory}\'...", end="")
-        if os.path.exists(f"{directory}{_filename}"):
-            print("Found.")
-            return f"{directory}{_filename}"
-        print("Not Found.")
-
-    return False
-
-
-def loadCSV(_filename):
+def loadCSV(_filename: str, promptIfError: bool = False, directoriesToCheck: list[str] = None):
     """
     This function validates that a CSV file with the name '_filename' exists
     If it does, it loads it in to a Pandas dataframe to be returned. In the event of an error,
     an empty pandas dataframe is returned
+    :param directoriesToCheck: See fileHelper.findFile
+    :param promptIfError: See fileHelper.findFile
     :param _filename: the csv filename to load
     :return: the dataframe from the csv or an empty dataframe if loaded failed
     """
     print(f"Attempting to load {_filename}...")
 
-    # TODO Add check to see if file is actually a CSV.
-    #  If this is not added the pandas pd.read_csv() will fail in certain edge cases
-
-    _filename = findFile(_filename)
+    _filename = fileHelper.findFile(_filename, promptIfError, directoriesToCheck)
     if not _filename:
         print("...Error")
         return pd.DataFrame()
@@ -111,27 +88,6 @@ def loadGradescope(_filename):
 
     gradescopeDF.rename(columns={'Email': 'multipass'}, inplace=True)
     return gradescopeDF
-
-
-def loadSpecialCases(_filename):
-    """
-    This function loads the special cases file, drops all rows whose 'assignment' column does not correspond
-    to the selected assignment.
-    :param _filename: The file name of the special cases file
-    :return: the filtered special cases dataframe
-    """
-    specialCasesDF = loadCSV(_filename)
-    if specialCasesDF.empty:
-        print("Loading special cases failed")
-        return specialCasesDF
-
-    # We want to non-destructively get the multipass so that it is easier to use the spreadsheet later
-    specialCasesDF['multipass'] = ""
-    # Get multipass from email
-    for i, row in specialCasesDF.iterrows():
-        specialCasesDF.at[i, 'multipass'] = row['email'].split("@")[0]
-
-    return specialCasesDF
 
 
 def loadPageFlagging(_filename, _assignment):
