@@ -1,50 +1,55 @@
+from UI import uiHelpers
+from Canvas import Canvas
+from Grade import grade, score, post
+import pandas as pd
+
 
 def standardGrading(_canvas: Canvas):
+    uiHelpers.setupAssignments(_canvas)
+    gradescopeGrades: dict[int, pd.DataFrame] = uiHelpers.setupGradescopeGrades(_canvas)
+    specialCasesDF = uiHelpers.setupSpecialCases()
 
-    print("Enter path to Gradescope grades")
-    gradescopePath: str = getUserInput(allowedUserInput="./path/to/gradescope_grades.csv")
-    specialCasesPath: str = getUserInput(allowedUserInput="./path/to/special_cases.cvs")
-    gradescopeDF: pd.DataFrame = csvLoaders.loadGradescope(gradescopePath)
-    if gradescopeDF.empty:
-        print(f"Fatal: Failed to load Gradescope grades from {gradescopePath}")
-        return False
-    specialCasesDF: pd.DataFrame = csvLoaders.loadSpecialCases(specialCasesPath)
-    if specialCasesDF.empty:
-        print(f"Fatal: Failed to load Special Cases from {specialCasesPath}")
-        return False
+    assignmentsToGrade: pd.DataFrame = _canvas.getAssignmentsToGrade()
 
     print("\n===\tGenerating Grades\t===\n")
-    scaleFactor, standardPoints, maxPoints, xcScaleFactor = setupScaling(selectedAssignment['points'].values[0])
-    gradescopeDF = grade.scaleScores(gradescopeDF, scaleFactor, standardPoints, maxPoints, xcScaleFactor)
-    missingScore, exceptions = setupMissingAssignments()
-    gradescopeDF = grade.scoreMissingAssignments(gradescopeDF, score=missingScore, exceptions=exceptions)
 
-    gradescopeDF, specialCasesDF = grade.calculateLatePenalty(gradescopeDF,
-                                                              specialCasesDF,
-                                                              selectedAssignment['common_name'].values[0])
+    for assignmentID, gradesDF in gradescopeGrades.items():
+        # we know that if we got here that the id will exist and only map to one assignment
+        currentAssignment: pd.DataFrame = assignmentsToGrade.loc[assignmentsToGrade['id'] == assignmentID]
+        print(f"Now grading {currentAssignment['name'].values[0]}...")
+
+        scaleFactor, standardPoints, maxPoints, xcScaleFactor = uiHelpers.setupScaling(currentAssignment['points'].values[0])
+        gradescopeGrades[assignmentID] = \
+            grade.scaleScores(gradesDF, scaleFactor, standardPoints, maxPoints, xcScaleFactor)
+
+        missingScore, exceptions = uiHelpers.setupMissingAssignments()
+        gradescopeGrades[assignmentID] = \
+            grade.scoreMissingAssignments(gradesDF, score=missingScore, exceptions=exceptions)
+
+        gradescopeGrades[assignmentID], specialCasesDF = \
+            grade.calculateLatePenalty(gradesDF, specialCasesDF, currentAssignment['common_name'].values[0])
 
     print("\nGrades have been generated. Would you like to continue?")
-    usrYN = getUserInput("y/n")
+    usrYN = uiHelpers.getUserInput("y/n")
     if usrYN.lower() != 'y':
         return False
 
     print("\n===\tGenerating Canvas Scores\t===\n")
-    gradescopeAssignments = {selectedAssignment['common_name'].values[0]: gradescopeDF}
     studentScores = score.createCanvasScoresForAssignments(
-        gradescopeAssignments,
+        gradescopeGrades,
         specialCasesDF,
         _canvas,
-        selectedAssignment['common_name'].values.tolist()
+        assignmentsToGrade
     )
 
     print("Scores have been generated. Would you like to continue?")
-    usrYN = getUserInput("y/n")
+    usrYN = uiHelpers.getUserInput("y/n")
     if usrYN.lower() != 'y':
         return False
 
     print("\n===\tPosting Scores\t===\n")
-    if post.writeGrades(gradescopeAssignments) \
-        and post.updateSpecialCases(specialCasesDF) \
+    if post.writeGrades(gradescopeGrades, assignmentsToGrade) \
+            and post.updateSpecialCases(specialCasesDF) \
             and post.postToCanvas(_canvas, studentScores):
         return True
 
