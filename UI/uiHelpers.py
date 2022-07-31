@@ -79,6 +79,8 @@ def setupGradescopeGrades(_canvas: Canvas) -> dict[int, pd.DataFrame]:
     # the IDs will always be unique per course - using those over the common names
     selectedAssignments: pd.DataFrame = _canvas.getAssignmentsToGrade()
     assignmentMap: dict[int, pd.DataFrame] = {}
+    if selectedAssignments is None:
+        return assignmentMap
     for i, row in selectedAssignments.iterrows():
         print(f"Enter path to Gradescope grades for {row['common_name']}")
         path = getUserInput(allowedUserInput="./path/to/gradescope/grades.csv")

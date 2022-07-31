@@ -54,6 +54,7 @@ def loadSpecialCases():
 
     # weird edge case with excel - it parses the spaces in names as unicode \xa0 - which is a pain - changing to a _
     specialCasesDF.columns = specialCasesDF.columns.str.replace('\xa0', '_')
+    specialCasesDF.columns = specialCasesDF.columns.str.replace(' ', '_')
 
     # We want to non-destructively get the multipass so that it is easier to use the spreadsheet later
     specialCasesDF['multipass'] = ""
@@ -67,5 +68,8 @@ def loadSpecialCases():
 
     # set the extension days to be an int
     specialCasesDF['extension_days'] = specialCasesDF['extension_days'].apply(pd.to_numeric)
+
+    # fill the NaNs in the approved by col with empty strings
+    specialCasesDF['approved_by'] = specialCasesDF['approved_by'].fillna('')
 
     return specialCasesDF

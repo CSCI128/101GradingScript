@@ -11,10 +11,10 @@ from Canvas import Canvas
 
 
 def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFrame,
-                       _students: pd.DataFrame, _assignmentId: str):
+                       _students: pd.DataFrame, _assignmentID: int):
     """
 
-    :param _assignmentId:
+    :param _assignmentID:
     :param _gradescopeDF:
     :param _specialCasesDF:
     :param _students:
@@ -30,34 +30,35 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
     if not isinstance(_students, pd.DataFrame):
         raise TypeError("Students MUST be passed as a Pandas DataFrame")
 
-    if type(_assignmentId) is not str or len(_assignmentId) < 5:
-        raise TypeError("Assignment ID MUST be a string containing a valid Canvas assignment id")
+    if type(_assignmentID) is not int or len(str(_assignmentID)) < 5:
+        raise TypeError("Assignment ID MUST be a int containing a valid Canvas assignment id")
 
     gradedAssignment: dict = {}
     _students['graded'] = False
     for i, student in _students.iterrows():
+        gradescopeCurrentStudent = _gradescopeDF['multipass'] == student['sis_id']
         # Handle the student not existing in gradescope
-        if len(_gradescopeDF.loc[_gradescopeDF['multipass'] == student['sis_id']]) == 0:
+        if len(_gradescopeDF.loc[gradescopeCurrentStudent]) == 0:
             continue
 
         studentComment: str = ""
         # get the student's special cases
         studentSpecialCase: pd.DataFrame = _specialCasesDF.loc[_specialCasesDF['multipass'] == student['sis_id']]
         # add a comment to the student's submission explaining any extension or special cases
-        if len(studentSpecialCase['extension_days']) != 0 and studentSpecialCase['extension_days'].values[0] > 0:
+        if len(studentSpecialCase['extension_days']) != 0 and studentSpecialCase['extension_days'].values[0] > 0 and studentSpecialCase['handled'].values[0] == "TRUE":
             studentComment = f"Extended by {studentSpecialCase['extension_days'].values[0]} days."
             # Let students know where their late passes have gone
             if studentSpecialCase['extension_type'].values[0] == "Late Pass":
                 studentComment += f"\n{studentSpecialCase['extension_days'].values[0]} late passes used"
-
-        if _gradescopeDF.loc[_gradescopeDF['multipass'] == student['sis_id']]['lateness_comment'].values[0]:
+            # maybe add comment if case was not handled correctly
+        if _gradescopeDF.loc[gradescopeCurrentStudent]['lateness_comment'].values[0]:
             # Handle if the student has another comment already
             if studentComment:
                 studentComment += "\n"
             studentComment += \
-                _gradescopeDF.loc[_gradescopeDF['multipass'] == student['sis_id']]['lateness_comment'].values[0]
+                _gradescopeDF.loc[gradescopeCurrentStudent]['lateness_comment'].values[0]
 
-        score = _gradescopeDF.loc[_gradescopeDF['multipass'] == student['sis_id']]['Total Score'].values[0]
+        score = _gradescopeDF.loc[gradescopeCurrentStudent]['Total Score'].values[0]
 
         gradedAssignment[student['id']] = {
             'name': student['name'],
