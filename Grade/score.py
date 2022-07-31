@@ -54,7 +54,8 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
             # Handle if the student has another comment already
             if studentComment:
                 studentComment += "\n"
-            studentComment += _gradescopeDF.loc[_gradescopeDF['multipass'] == student['sis_id']]['lateness_comment'].values[0]
+            studentComment += \
+                _gradescopeDF.loc[_gradescopeDF['multipass'] == student['sis_id']]['lateness_comment'].values[0]
 
         score = _gradescopeDF.loc[_gradescopeDF['multipass'] == student['sis_id']]['Total Score'].values[0]
 
@@ -79,8 +80,8 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
     return gradedAssignment
 
 
-def createCanvasScoresForAssignments(_gradescopeAssignments: dict[str, pd.DataFrame],
-                                     _specialCasesDF: pd.DataFrame, _canvas: Canvas, _assignments: list[str]) \
+def createCanvasScoresForAssignments(_gradescopeAssignments: dict[int, pd.DataFrame],
+                                     _specialCasesDF: pd.DataFrame, _canvas: Canvas, _assignments: pd.DataFrame) \
         -> dict[str, dict[str, any]]:
     """
    Description
@@ -110,7 +111,7 @@ def createCanvasScoresForAssignments(_gradescopeAssignments: dict[str, pd.DataFr
     :return: A map containing the assignment id and the scores to be posted under that id.
     """
     if type(_gradescopeAssignments) is not dict:
-        raise TypeError("Gradescope assignments must be passed as a dict mapping the common name to the assignment as "
+        raise TypeError("Gradescope assignments must be passed as a dict mapping the id to the assignment as "
                         "a Pandas DataFrame")
 
     if not isinstance(_specialCasesDF, pd.DataFrame):
@@ -125,14 +126,12 @@ def createCanvasScoresForAssignments(_gradescopeAssignments: dict[str, pd.DataFr
 
     print(f"Creating scores for {len(students)} students across {len(_gradescopeAssignments)} assignments...")
 
-    assignmentMap: dict[str, str] = _canvas.getAssignmentIDsFromCommonName(_assignments)
-
-    for commonName, assignmentID in assignmentMap.items():
-        print(f"\tScoring {commonName} - {assignmentID} for {len(students)} students...", end='')
-        assignmentsToPost[assignmentID] = \
-            createCanvasScores(_gradescopeAssignments[commonName],
-                               _specialCasesDF.loc[_specialCasesDF['assignment'] == commonName],
-                               students, assignmentID)
+    for i, row in _assignments.iterrows():
+        print(f"\tScoring {row['name']} for {len(students)} students...", end='')
+        assignmentsToPost[row['id']] = \
+            createCanvasScores(_gradescopeAssignments[row['id']],
+                               _specialCasesDF.loc[_specialCasesDF['assignment'] == row['common_name']],
+                               students, row['id'])
 
     print("...Done")
     return assignmentsToPost

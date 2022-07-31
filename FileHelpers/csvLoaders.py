@@ -1,5 +1,5 @@
 import pandas as pd
-import fileHelper
+from FileHelpers import fileHelper
 
 # When dropping all the unnecessary rows, drop all but these guys ALWAYS.
 # Exceptions (like for canvas we want to drop all but the assignment we are posting) exist,
@@ -44,7 +44,7 @@ def loadGradescope(_filename):
     :param _filename: the filename of the assignment to be graded
     :return: the loaded gradescope dataframe
     """
-    gradescopeDF = loadCSV(_filename)
+    gradescopeDF = loadCSV(_filename, directoriesToCheck=["./", "./gradescope/"])
 
     if gradescopeDF.empty:
         print("Loading Gradescope CSV failed.")

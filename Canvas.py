@@ -417,7 +417,7 @@ class Canvas:
         :param _assignments: the list of assignment common names.
         """
 
-        if type(_assignments) is not list[str] or not _assignments:
+        if type(_assignments) is not list or not _assignments:
             raise AttributeError("Unable to parse _assignments. Must be a list of strings.")
 
         self.m_assignmentsToGrade = pd.DataFrame()
@@ -425,7 +425,7 @@ class Canvas:
             mappedAssignment: (pd.DataFrame, None) = self.getAssignmentFromCommonName(assignment)
             if mappedAssignment is None:
                 continue
-            self.m_assignmentsToGrade.append(mappedAssignment)
+            self.m_assignmentsToGrade = self.m_assignmentsToGrade.append(mappedAssignment)
 
     def getStudents(self):
         return self.m_students

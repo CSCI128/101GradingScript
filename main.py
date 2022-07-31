@@ -1,9 +1,6 @@
-import pandas as pd
-
-from FileHelpers import csvLoaders
-from Grade import post, score, grade
 from Canvas import Canvas
 import config
+from UI.ui import mainMenu
 
 
 def main():

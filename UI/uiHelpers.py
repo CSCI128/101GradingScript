@@ -1,7 +1,8 @@
 """
 """
 import pandas as pd
-
+from FileHelpers.csvLoaders import loadGradescope
+from FileHelpers.excelLoaders import loadSpecialCases
 from Canvas import Canvas
 
 
@@ -53,7 +54,7 @@ def setupAssignments(_canvas: Canvas):
             # usrYN = getUserInput(allowedUserInput="y/n")
             # if usrYN.lower() == 'y':
             #     raise NotImplementedError("Manual Overriding is not implemented")
-        else:
+        elif selectedAssignment.lower() != "done":
             # TODO
             #  this is really hacky - but it will do until I get around to improving it
             #  I think a decent solution would be this function adding the assignments to the list to be graded rather
@@ -74,8 +75,26 @@ def setupAssignments(_canvas: Canvas):
     _canvas.selectAssignmentsToGrade(selectedAssignmentsCommonNames)
 
 
-def setupGradescopeGrades(_canvas: Canvas) -> dict[str, pd.DataFrame]:
-    pass
+def setupGradescopeGrades(_canvas: Canvas) -> dict[int, pd.DataFrame]:
+    # the IDs will always be unique per course - using those over the common names
+    selectedAssignments: pd.DataFrame = _canvas.getAssignmentsToGrade()
+    assignmentMap: dict[int, pd.DataFrame] = {}
+    for i, row in selectedAssignments.iterrows():
+        print(f"Enter path to Gradescope grades for {row['common_name']}")
+        path = getUserInput(allowedUserInput="./path/to/gradescope/grades.csv")
+        gradescopeDF: pd.DataFrame = loadGradescope(path)
+        if gradescopeDF.empty:
+            print(f"Failed to load file '{path}'")
+            # TODO handle this case more elegantly
+            return {}
+        assignmentMap[row['id']] = gradescopeDF
+
+    return assignmentMap
+
+
+def setupSpecialCases() -> pd.DataFrame:
+    return loadSpecialCases()
+
 
 def setupScaling(_assignmentPoints: float) -> (float, float, float, (float, None)):
     assignmentScaleFactor: float = 1.0

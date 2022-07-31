@@ -127,7 +127,7 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
     for i, row in _gradescopeDF.iterrows():
         # Skip over students who didn't submit - they already got a zero
         if row['Status'] == "Missing":
-            if row['multipass'] in _specialCasesDF.loc[_assignment == _specialCasesDF['assignment'], 'multipass'].values.tolist():
+            if not _specialCasesDF.empty and row['multipass'] in _specialCasesDF.loc[_assignment == _specialCasesDF['assignment'], 'multipass'].values.tolist():
                 _specialCasesDF.loc[
                     (_specialCasesDF['multipass'] == row['multipass']) &
                     (_specialCasesDF['assignment'] == _assignment), 'handled'] = "FALSE"
@@ -140,7 +140,7 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         hoursLate = row['hours_late']
         # this is safe - if no students are found in the special cases, then it will be empty
         #  and the loop will just not run.
-        if row['multipass'] in _specialCasesDF.loc[_assignment == _specialCasesDF['assignment'], 'multipass'].values.tolist():
+        if not _specialCasesDF.empty and row['multipass'] in _specialCasesDF.loc[_assignment == _specialCasesDF['assignment'], 'multipass'].values.tolist():
             if not row['approved_by']:
                 _specialCasesDF.loc[
                     (_specialCasesDF['multipass'] == row['multipass']) &
