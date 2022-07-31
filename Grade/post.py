@@ -31,7 +31,7 @@ def writeUpdatedGradebookToFile(_canvasScores: dict[str, dict[any, any]], _stude
     )
     assignmentsInGradebook: str = ""
     for assignmentID, grades in _canvasScores.items():
-        assignment = _assignmentsToGrade.loc[_assignmentsToGrade["id" == assignmentID]]
+        assignment = _assignmentsToGrade.loc[_assignmentsToGrade['id'] == assignmentID]
         assignmentsInGradebook += f"_{assignment['common_name'].values[0]}"
         fullGradebookName = f"{assignment['name'].values[0]} ({assignmentID})"
         formattedGradebook[fullGradebookName] = ""
@@ -134,8 +134,8 @@ def writeGrades(_gradescopeAssignments: dict[int, pd.DataFrame], assignmentsToGr
 
     print(f"Writing {len(_gradescopeAssignments)} assignments to file...")
     for assignmentID, grades in _gradescopeAssignments.items():
-        print(f"\tWriting '{assignmentsToGrade.loc[assignmentsToGrade[assignmentID], 'name']}' to file...", end='')
-        fullPath = f"./gradescope/graded/{assignmentsToGrade.loc[assignmentsToGrade[assignmentID], 'common_name']}_graded.csv"
+        print(f"\tWriting '{assignmentsToGrade.loc[assignmentsToGrade['id'] == assignmentID, 'name'].values[0]}' to file...", end='')
+        fullPath = f"./gradescope/graded/{assignmentsToGrade.loc[assignmentsToGrade['id'] == assignmentID, 'common_name'].values[0]}_graded.csv"
         if not csvWriter(fullPath, grades):
             print("Failed")
             print(f"\t\tWriting {fullPath} failed.")
