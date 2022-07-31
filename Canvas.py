@@ -17,6 +17,7 @@ class Canvas:
         self.ENDPOINT: str = _ENDPOINT
         self.m_students: pd.DataFrame = pd.DataFrame()
         self.m_assignments: pd.DataFrame = pd.DataFrame()
+        self.m_assignmentsToGrade: (pd.DataFrame, None) = None
 
     def __validate__(self):
         """
@@ -352,10 +353,10 @@ class Canvas:
 
         responses: list[dict[any, any]] = []
         for i, batch in enumerate(_batchedAssignment):
-            print(f"\t\tPosting batch {i+1} / {len(_batchedAssignment)}...", end='')
+            print(f"\t\tPosting batch {i + 1} / {len(_batchedAssignment)}...", end='')
             responses.append(self.__postRequest__(url, header, batch))
             if len(responses[i]) == 0:
-                print(f"Failed\n\tPosting failed on batch {i+1} / {len(_batchedAssignment)}")
+                print(f"Failed\n\tPosting failed on batch {i + 1} / {len(_batchedAssignment)}")
                 return False
             print("Pending")
             # TODO validate the response
@@ -371,16 +372,7 @@ class Canvas:
         """
         assignmentMap: dict[str, str] = {}
         for commonName in _assignmentList:
-            filteredAssignments: pd.DataFrame = self.m_assignments.loc[self.m_assignments['common_name'] == commonName]
-            if len(filteredAssignments) > 1:
-                print(f"Many assignments matching {commonName} found. Please enter the id the correct one")
-                for i, assignment in filteredAssignments.iterrows():
-                    print(f"{assignment['id']}\t{assignment['name']}\t{assignment['points']}")
-                correctID = str(input("(id: 123456): "))
-                assignmentMap[commonName] = correctID
-                continue
-
-            assignmentMap[commonName] = str(filteredAssignments['id'].values[0])
+            assignmentMap[commonName] = str(self.getAssignmentFromCommonName(commonName)['id'].values[0])
 
         return assignmentMap
 
@@ -393,8 +385,53 @@ class Canvas:
 
         return self.m_assignments.loc[self.m_assignments['id'] == _id]
 
+    def getAssignmentFromCommonName(self, _assignment: str) -> (pd.DataFrame, None):
+
+        filteredAssignments: pd.DataFrame = self.m_assignments.loc[self.m_assignments['common_name'] == _assignment]
+
+        if len(filteredAssignments) > 1:
+            print(f"Many assignments matching {_assignment} found. Please enter the id the correct one")
+            for i, assignment in filteredAssignments.iterrows():
+                print(f"{assignment['id']}\t{assignment['name']}\t{assignment['points']}")
+            correctID = str(input("(id: 123456): "))
+            return filteredAssignments.loc[filteredAssignments['id'] == correctID]
+        elif len(filteredAssignments) == 0:
+            print(f"Unable to map assignment automatically. {_assignment} is unknown.")
+            # todo add support to manually enter assignment details
+            print("Assignment is being ignored.")
+            return None
+        return filteredAssignments
+
+    def validateAssignment(self, commonName: (str, None) = None, canvasID: (int, None) = None) -> bool:
+        if commonName is not None:
+            return len(self.m_assignments.loc[self.m_assignments['common_name'] == commonName]) > 0
+        if canvasID is not None:
+            return len(self.m_assignments.loc[self.m_assignments['id'] == canvasID]) > 0
+
+        return False
+
+    def selectAssignmentsToGrade(self, _assignments: list[str]):
+        """
+        This function maps the common name of the assignment to the actual assignment - this will help clean up a lot of
+        the logic and make the rest of the program a lot more consistent with the way that it handles them
+        :param _assignments: the list of assignment common names.
+        """
+
+        if type(_assignments) is not list[str] or not _assignments:
+            raise AttributeError("Unable to parse _assignments. Must be a list of strings.")
+
+        self.m_assignmentsToGrade = pd.DataFrame()
+        for assignment in _assignments:
+            mappedAssignment: (pd.DataFrame, None) = self.getAssignmentFromCommonName(assignment)
+            if mappedAssignment is None:
+                continue
+            self.m_assignmentsToGrade.append(mappedAssignment)
+
     def getStudents(self):
         return self.m_students
 
     def getAssignments(self):
         return self.m_assignments
+
+    def getAssignmentsToGrade(self):
+        return self.m_assignmentsToGrade
