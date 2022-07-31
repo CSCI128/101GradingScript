@@ -104,6 +104,7 @@ class Canvas:
         This function gets the common name from the assignment in canvas.
         I am defining the common name as the shorthand abbreviation for the assignment,
         so HW 1 would read as HW1, Lab 14 would read as L14.
+        Also supports the 102 OL way of doing lab names IE Python Assessment 1B = PA1B
         If this function can't derive a common name it returns UKN + the current unknown counter.
         UKN stands for UnKowN - clever, right?
 
@@ -111,13 +112,20 @@ class Canvas:
         :return: the common format name
         """
         commonNameNumbers: str = "".join([ch for ch in _assignmentName if str(ch).isdigit()])
-        commonName = ""
+        commonNameLabLetter: str = ""
+        # Find the lab letter for cases like L1B or Python Assessment 1B - there might be a better way to do this
+        for i in range(1, len(_assignmentName)):
+            if str.isdigit(_assignmentName[i - 1]) and _assignmentName[i] != " " and str.isupper(_assignmentName[i]):
+                commonNameLabLetter = _assignmentName[i]
+                break
 
+        commonName = ""
         for ch in _assignmentName:
             if str.isupper(ch):
                 commonName += ch
             if str.isdigit(ch):
                 commonName += commonNameNumbers
+                commonName += commonNameLabLetter
                 break
             if len(commonName) >= 4:
                 break
