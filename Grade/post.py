@@ -20,7 +20,7 @@ from FileHelpers.excelWriter import writeSpecialCases
 BATCH_SIZE = 50
 
 
-def writeUpdatedGradebookToFile(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]], _students: pd.DataFrame):
+def writeUpdatedGradebookToFile(_canvasScores: dict[str, dict[any, any]], _students: pd.DataFrame, _assignmentsToGrade: pd.DataFrame):
     formattedGradebook: pd.DataFrame = pd.DataFrame(
         {'Student': _students['name'],
          'ID': _students['id'],
@@ -31,13 +31,13 @@ def writeUpdatedGradebookToFile(_canvas: Canvas, _canvasScores: dict[str, dict[a
     )
     assignmentsInGradebook: str = ""
     for assignmentID, grades in _canvasScores.items():
-        assignment = _canvas.getAssignmentFromID(int(assignmentID))
+        assignment = _assignmentsToGrade.loc[_assignmentsToGrade['id'] == assignmentID]
         assignmentsInGradebook += f"_{assignment['common_name'].values[0]}"
-        assignment = f"{assignment['name'].values[0]} ({assignmentID})"
-        formattedGradebook[assignment] = ""
+        fullGradebookName = f"{assignment['name'].values[0]} ({assignmentID})"
+        formattedGradebook[fullGradebookName] = ""
         for i, row in formattedGradebook.iterrows():
             try:
-                formattedGradebook.at[i, assignment] = grades[row['ID']]['score']
+                formattedGradebook.at[i, fullGradebookName] = grades[row['ID']]['score']
             except KeyError:
                 pass
 
@@ -51,7 +51,7 @@ def writeUpdatedGradebookToFile(_canvas: Canvas, _canvasScores: dict[str, dict[a
         return False
 
     print(f"Writing updated gradebook to file...")
-    todayDate: str = date.today().strftime("%d-%m-%y")
+    todayDate: str = date.today().strftime("%m-%d-%y")
 
     fullPath = f"./canvas/graded/canvas_{todayDate}{assignmentsInGradebook}_graded.csv"
 
@@ -71,7 +71,9 @@ def postToCanvas(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]], stud
     if studentsToPost is None:
         studentsToPost = _canvas.getStudents()
 
-    writeUpdatedGradebookToFile(_canvas, _canvasScores, studentsToPost)
+    assignmentsToGrade: pd.DataFrame = _canvas.getAssignmentsToGrade()
+
+    writeUpdatedGradebookToFile(_canvasScores, studentsToPost, assignmentsToGrade)
 
     print(f"{len(_canvasScores)} assignments are ready to be posted to Canvas.")
 
@@ -120,7 +122,7 @@ def postToCanvas(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]], stud
     return True
 
 
-def writeGrades(_gradescopeAssignments: dict[str, pd.DataFrame]):
+def writeGrades(_gradescopeAssignments: dict[int, pd.DataFrame], assignmentsToGrade: pd.DataFrame):
     print(f"{len(_gradescopeAssignments)} assignment grades are ready to be written to file.")
     print("Please confirm: This operation will write the updated graded assignments to file"
           " and CAN NOT be reversed.")
@@ -131,9 +133,9 @@ def writeGrades(_gradescopeAssignments: dict[str, pd.DataFrame]):
         return False
 
     print(f"Writing {len(_gradescopeAssignments)} assignments to file...")
-    for assignment, grades in _gradescopeAssignments.items():
-        print(f"\tWriting {assignment} to file...", end='')
-        fullPath = f"./gradescope/graded/{assignment}_graded.csv"
+    for assignmentID, grades in _gradescopeAssignments.items():
+        print(f"\tWriting '{assignmentsToGrade.loc[assignmentsToGrade['id'] == assignmentID, 'name'].values[0]}' to file...", end='')
+        fullPath = f"./gradescope/graded/{assignmentsToGrade.loc[assignmentsToGrade['id'] == assignmentID, 'common_name'].values[0]}_graded.csv"
         if not csvWriter(fullPath, grades):
             print("Failed")
             print(f"\t\tWriting {fullPath} failed.")

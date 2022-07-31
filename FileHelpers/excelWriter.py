@@ -45,7 +45,7 @@ def applyStylingForSpecialCases(_specialCasesDF: pd.DataFrame) -> StyleFrame:
         font_size=11.0,
         wrap_text=False,
         shrink_to_fit=False,
-        horizontal_alignment=utils.horizontal_alignments.right,
+        horizontal_alignment=utils.horizontal_alignments.left,
         border_type=None,
     )
 
@@ -104,7 +104,7 @@ def excelWriter(_filename: str, _data: (StyleFrame, pd.DataFrame)) -> bool:
     if isinstance(_data, StyleFrame):
         try:
             ew = pd.ExcelWriter(_filename)
-            _data.to_excel(excel_writer=ew, merge_cells=True, index=False, allow_protection=True)
+            _data.to_excel(excel_writer=ew, merge_cells=True, index=False)
             ew.save()
         except IOError as e:
             print(f"Unable to write '{_filename}' to file due to {e}")
