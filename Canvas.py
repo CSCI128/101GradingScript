@@ -425,7 +425,7 @@ class Canvas:
             mappedAssignment: (pd.DataFrame, None) = self.getAssignmentFromCommonName(assignment)
             if mappedAssignment is None:
                 continue
-            self.m_assignmentsToGrade = self.m_assignmentsToGrade.append(mappedAssignment)
+            self.m_assignmentsToGrade = pd.concat([self.m_assignmentsToGrade, mappedAssignment], axis=0, join='outer')
 
     def getStudents(self):
         return self.m_students
