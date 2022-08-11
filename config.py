@@ -76,6 +76,33 @@ def createNewConfig():
     assignments = canvas.getAssignmentsFromCanvas(groupsToUse)
     print("...Done")
 
+    print("Enter Common Name for status assignments (they must be already downloaded).")
+    selectedAssignment: str = ""
+    statusAssignment: dict = {}
+    statusAssignments: list[dict] = []
+    while selectedAssignment.lower() != "done":
+        selectedAssignment = input("(Common name or done): ")
+        if selectedAssignment.lower() != "done":
+            # The way that this is currently being done means that if there are multiple matches then we will be unable
+            #  to actually select it.
+            for i in range(len(assignments)):
+                if assignments[i]['common_name'] == selectedAssignment:
+                    statusAssignment = assignments[i]
+                    break
+            if not statusAssignment:
+                print(f"Unable to identify assignment with common name {selectedAssignment}")
+                continue
+            print(f"Identified {statusAssignment['name']}")
+            print("Is this correct?")
+            usrYN = str(input("(y/n): "))
+            if usrYN.lower() == 'y':
+                statusAssignment['trigger'] = str(input("Enter trigger (this is how the status : "))
+                statusAssignment.pop('points')
+                statusAssignments.append(statusAssignment)
+
+            statusAssignment = {}
+            selectedAssignment = ""
+
     input("Press any key to write the config file...")
 
     output = dict()
@@ -90,6 +117,7 @@ def createNewConfig():
     print("Done.")
     print("\tWriting assignments...", end='')
     output['assignments'] = assignments
+    output['status_assignments'] = statusAssignments
     print("Done.")
     print("\tWriting to file...", end='')
     with open(f"./config/{selectedCourse['name']}-config.json", 'w') as jsonOutput:

@@ -17,6 +17,7 @@ class Canvas:
         self.ENDPOINT: str = _ENDPOINT
         self.m_students: pd.DataFrame = pd.DataFrame()
         self.m_assignments: pd.DataFrame = pd.DataFrame()
+        self.m_statusAssignments: pd.DataFrame = pd.DataFrame()
         self.m_assignmentsToGrade: (pd.DataFrame, None) = None
 
     def __validate__(self):
@@ -172,9 +173,15 @@ class Canvas:
         if not _configFile["assignments"] or len(_configFile["assignments"]) == 0:
             print("No assignments found")
             return None
+        if not _configFile['status_assignments'] or len(_configFile["assignments"]) == 0:
+            print("No status assignments found")
 
         self.m_assignments = pd.DataFrame(_configFile["assignments"])
+        self.m_statusAssignments = pd.DataFrame(_configFile['status_assignment']) \
+            if _configFile['status_assignments'] \
+            else pd.DataFrame()
         print(f"Loaded {len(self.m_assignments)} assignments")
+        print(f"Loaded {len(self.m_statusAssignments)} status assignments")
 
     def getAssignmentGroupsFromCanvas(self):
         """
@@ -209,7 +216,7 @@ class Canvas:
 
         return assignmentGroups
 
-    def getAssignmentsFromCanvas(self, _assignmentGroups):
+    def getAssignmentsFromCanvas(self, _assignmentGroups) -> list:
         """
         This function pulls assignments from canvas that it finds in the groups passed as parameters. It strips out
         the unnecessary fields provided by the canvas api.
@@ -229,20 +236,20 @@ class Canvas:
         #  - gets list of assignments in a group
 
         if not self.__validate__():
-            return None
+            return []
 
         if type(_assignmentGroups) is not list:
             raise TypeError("Assignment groups must be a list")
 
         header = {"Authorization": f"Bearer {self.API_KEY}"}
 
-        canvasAssignments = []
+        canvasAssignments:list = []
         for assignmentGroup in _assignmentGroups:
             url = f"{self.ENDPOINT}/api/v1/courses/{self.COURSE_ID}/assignment_groups/{assignmentGroup}/assignments"
             canvasAssignments.extend(self.__getPaginatedResponse__(url, header))
 
         print(f"Returned {len(canvasAssignments)} assignments")
-        parsedAssignments = []
+        parsedAssignments: list = []
         for assignment in canvasAssignments:
             newAssignment = dict()
             newAssignment['common_name'] = self.__getCommonName__(assignment['name'])
@@ -297,6 +304,9 @@ class Canvas:
         # dataframes are a lot easier to work with
         self.m_students = pd.DataFrame(studentList)
         print("...Done")
+
+    def updateStatusList(self):
+        pass
 
     def getCourseList(self):
         """
