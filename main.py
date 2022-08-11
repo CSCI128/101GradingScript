@@ -4,7 +4,10 @@ from UI.ui import mainMenu
 
 
 def main():
+    # TODO May want to rework this config loading!
     loadedConfig = config.loadConfig()
+    # TODO Should this be moved to after the action is taken?
+
     print("Connecting to Canvas...")
     canvas = Canvas()
     canvas.loadSettings(loadedConfig)
