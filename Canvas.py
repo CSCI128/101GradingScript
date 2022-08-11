@@ -173,15 +173,17 @@ class Canvas:
         if not _configFile["assignments"] or len(_configFile["assignments"]) == 0:
             print("No assignments found")
             return None
-        if not _configFile['status_assignments'] or len(_configFile["assignments"]) == 0:
+        if 'status_assignments' not in _configFile.keys() or \
+                not _configFile['status_assignments'] or len(_configFile["assignments"]) == 0:
             print("No status assignments found")
+        else:
+            self.m_statusAssignments = pd.DataFrame(_configFile['status_assignment']) \
+                if _configFile['status_assignments'] \
+                else pd.DataFrame()
+            print(f"Loaded {len(self.m_statusAssignments)} status assignments")
 
         self.m_assignments = pd.DataFrame(_configFile["assignments"])
-        self.m_statusAssignments = pd.DataFrame(_configFile['status_assignment']) \
-            if _configFile['status_assignments'] \
-            else pd.DataFrame()
         print(f"Loaded {len(self.m_assignments)} assignments")
-        print(f"Loaded {len(self.m_statusAssignments)} status assignments")
 
     def getAssignmentGroupsFromCanvas(self):
         """
@@ -282,7 +284,7 @@ class Canvas:
 
         studentList: list[dict] = []
         # So when the registrar adds students to a class, we don't have their CWID or multipass
-        #  Naturally, this isn't documented anywhere so through trial and error i found the fields that will always
+        #  Naturally, this isn't documented anywhere so through trial and error I found the fields that will always
         #  be included when we pull the students.
         print("\tProcessing students...", end='')
         invalidStudents: int = 0
@@ -314,7 +316,7 @@ class Canvas:
         to ensure that they will have write access.
         :return: The list of courses with the course ID, name, and enrollment type
         """
-        # we are getting the list of course IDs here so we dont need to do a full validation
+        # we are getting the list of course IDs here, so we don't need to do a full validation
         # api/v1/users/:userid/courses
         if not self.API_KEY or not self.USER_ID:
             return None

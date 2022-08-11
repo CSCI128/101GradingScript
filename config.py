@@ -3,6 +3,8 @@ import os
 from Canvas import Canvas
 
 
+# This file needs some work, esp with handling user input.
+
 def locateConfigFiles():
     """
     This function reads the config files from the './config/' directory.
@@ -96,7 +98,8 @@ def createNewConfig():
             print("Is this correct?")
             usrYN = str(input("(y/n): "))
             if usrYN.lower() == 'y':
-                statusAssignment['trigger'] = str(input("Enter trigger (this is how the status : "))
+                # The trigger is the word in extension type that will trigger a status assignment update for a student
+                statusAssignment['trigger'] = str(input("Enter trigger: "))
                 statusAssignment.pop('points')
                 statusAssignments.append(statusAssignment)
 
@@ -120,6 +123,7 @@ def createNewConfig():
     output['status_assignments'] = statusAssignments
     print("Done.")
     print("\tWriting to file...", end='')
+    # TODO Move to a file handler call
     with open(f"./config/{selectedCourse['name']}-config.json", 'w') as jsonOutput:
         json.dump(output, jsonOutput)
         print("Done.")
