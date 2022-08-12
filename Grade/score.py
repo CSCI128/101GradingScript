@@ -81,6 +81,27 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
     return gradedAssignment
 
 
+def createCanvasScoresForStatusAssignments(statusAssignmentScoresDF: pd.DataFrame, _students: pd.DataFrame) \
+        -> dict[str, any]:
+    if not isinstance(statusAssignmentScoresDF, pd.DataFrame):
+        raise TypeError("Status Assignments MUST be passed as a Pandas DataFrame")
+    if not isinstance(_students, pd.DataFrame):
+        raise TypeError("Students MUST be passed as a Pandas DataFrame")
+
+    # TODO currently the way that scoring is implemented will only allow one status assignment to be updated
+    scoredStatusAssignments: dict[str, any] = {}
+    for i, assignment in statusAssignmentScoresDF.iterrows():
+        student = _students.loc[_students['sis_id'] == assignment['multipass']]
+        scoredStatusAssignments[student['id'].values[0]] = {
+            'name': student['name'].values[0],
+            'id': str(student['id'].values[0]),
+            'score': assignment['student_score'],
+            'comment': ""
+        }
+
+    return scoredStatusAssignments
+
+
 def createCanvasScoresForAssignments(_gradescopeAssignments: dict[int, pd.DataFrame],
                                      _specialCasesDF: pd.DataFrame, _canvas: Canvas, _assignments: pd.DataFrame) \
         -> dict[str, dict[str, any]]:
@@ -134,5 +155,11 @@ def createCanvasScoresForAssignments(_gradescopeAssignments: dict[int, pd.DataFr
                                _specialCasesDF.loc[_specialCasesDF['assignment'] == row['common_name']],
                                students, row['id'])
 
+    statusAssignmentsScores = _canvas.getStatusAssignmentScores()
+    print(f"Creating scores for {len(statusAssignmentsScores)} status assignments...")
+    assignmentsToPost[statusAssignmentsScores['status_id'].values[0]] = \
+        createCanvasScoresForStatusAssignments(statusAssignmentsScores, students)
+    # add the status assignments to the actively graded assignments
+    _canvas.selectAssignmentsToGrade([_canvas.getAssignmentFromID(statusAssignmentsScores['status_id'].values[0])['common_name'].values[0]])
     print("...Done")
     return assignmentsToPost
