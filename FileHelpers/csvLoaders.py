@@ -6,7 +6,7 @@ from FileHelpers import fileHelper
 # and are handled in each function
 GRADESCOPE_NEVER_DROP = ['Name', 'Email', 'Total Score', 'Status', 'Lateness']
 # Grace Period of 15 minutes
-GRADESCOPE_GRACE_PERIOD = 15 * 60
+GRADESCOPE_GRACE_PERIOD = 15
 
 
 def loadCSV(_filename: str, promptIfError: bool = False, directoriesToCheck: list[str] = None):
