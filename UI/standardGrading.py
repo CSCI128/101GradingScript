@@ -30,7 +30,7 @@ def standardGrading(_canvas: Canvas):
         gradescopeGrades[assignmentID] = \
             grade.scoreMissingAssignments(gradesDF, score=missingScore, exceptions=exceptions)
 
-        gradescopeGrades[assignmentID], specialCasesDF = \
+        gradescopeGrades[assignmentID], specialCasesDF, statusAssignmentScores = \
             grade.calculateLatePenalty(gradesDF, specialCasesDF, statusAssignments, statusAssignmentScores,
                                        currentAssignment['common_name'].values[0])
 

@@ -6,6 +6,7 @@ They work directly with the Gradescope assignment Dataframe and the special case
 This file **non-destructively** edits the grades. Meaning that nothing is written to file or Canvas - it
 has to be committed by the user using a different module.
 """
+import datetime
 import math
 import pandas as pd
 
@@ -92,8 +93,69 @@ def scoreMissingAssignments(_gradescopeDF: pd.DataFrame, score: float = 0, excep
     return _gradescopeDF
 
 
+def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFrame,
+                                       _statusAssignmentsDF: pd.DataFrame,
+                                       _statusAssignmentScoresDF: pd.DataFrame, _assignmentCommonName: str):
+    """
+   Description
+    --------
+    This function updates the status assignments according to special case file. It checks to see if the student both
+    1. submitted and 2. if they submitted late to avoid docking a status assignment unless necessary. It also validates
+    that the student is actually able to request the extension that they requested. If the status assignment is
+    available, update the points to post to canvas and automatically approve the extension.
+    :param _statusAssignmentScoresDF: The scores for the current each status assignment
+    :param _statusAssignmentsDF: The current status assignments
+    :param _assignmentCommonName: The assignment name to look up in the special cases file.
+    :param _gradescopeDF: the assignment being graded
+    :param _specialCasesDF: the special cases for the assignment being graded
+    :return: the updated special cases dataframe, the updated gradescope dataframe, and the status assignment scores dataframe
+    """
+
+    for i, row in _gradescopeDF.iterrows():
+        # If either of these are the case, we don't need to update the status assignments
+        if row['Status'] == "Missing" or row['hours_late'] == 0:
+            continue
+
+        currentSpecialCase = (_specialCasesDF['multipass'] == row['multipass']) & \
+                             (_specialCasesDF['assignment'] == _assignmentCommonName)
+
+        if len(_specialCasesDF.loc[currentSpecialCase]) == 0:
+            continue
+
+        if _specialCasesDF.loc[currentSpecialCase, 'extension_type'] in _statusAssignmentsDF['trigger'].values:
+            currentStatusAssignment = \
+                (_statusAssignmentScoresDF['multipass'] == row['multipass']) & \
+                (_statusAssignmentScoresDF['status_id'] ==
+                 (_statusAssignmentsDF.loc[_statusAssignmentsDF['trigger'] ==
+                                           _specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[0],
+                                           'id'].values[0]))
+
+            if len(_statusAssignmentScoresDF.loc[currentStatusAssignment, 'student_score']) == 0:
+
+                _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
+                _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = \
+                    "Unable to process triggered special case: No status assignment found for student."
+
+            # if the student requested more of an extension than they were entitled to
+            elif _statusAssignmentScoresDF.loc[currentStatusAssignment, 'student_score'].values[0] < \
+                    _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]:
+
+                _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
+                _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = \
+                    "Unable to process triggered special case: Limit exceeded."
+
+            else:
+                _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = \
+                    f"Automatically Approved on {datetime.date.today().strftime('%m-%d-%y')}"
+                _statusAssignmentScoresDF.loc[currentStatusAssignment, 'student_score'] -= \
+                    _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]
+                _specialCasesDF.loc[currentSpecialCase, 'approved_by'] = "AUTOMATIC APPROVAL"
+
+    return _specialCasesDF, _statusAssignmentScoresDF
+
+
 def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFrame, _statusAssignmentsDF: pd.DataFrame,
-                         _statusAssignmentScores: pd.DataFrame, _assignmentCommonName: str,
+                         _statusAssignmentScoresDF: pd.DataFrame, _assignmentCommonName: str,
                          latePenalty: list[float] = None):
     """
    Description
@@ -103,13 +165,13 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
     assignment at a time due to limitations in how .loc works in pandas and updating the master dataframe
     would require iterating over everywhere individually and merging them.
 
-    :param _statusAssignmentScores: The scores for the current each status assignment
+    :param _statusAssignmentScoresDF: The scores for the current each status assignment
     :param _statusAssignmentsDF: The current status assignments
     :param _assignmentCommonName: The assignment name to look up in the special cases file.
     :param _gradescopeDF: the assignment being graded
     :param _specialCasesDF: the special cases for the assignment being graded
     :param latePenalty: an array of floats that contains the score mods for the late penalty
-    :return: the updated special cases dataframe and the updated gradescope dataframe
+    :return: the updated special cases dataframe, the updated gradescope dataframe, and the status assignment scores dataframe
     """
     if not isinstance(_gradescopeDF, pd.DataFrame):
         raise TypeError("Gradescope grades MUST be passed as a Pandas DataFrame")
@@ -125,19 +187,27 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
 
     print(f"Applying late penalties for {_assignmentCommonName}...")
     _gradescopeDF['lateness_comment'] = ""
+
+    _specialCasesDF, _statusAssignmentScoresDF = \
+        validateAndUpdateStatusAssignments(_gradescopeDF, _specialCasesDF, _statusAssignmentsDF,
+                                           _statusAssignmentScoresDF, _assignmentCommonName)
     specialCaseStudents = 0
     latePenaltyStudents = 0
     for i, row in _gradescopeDF.iterrows():
-        # This is just a bool mask - it doesnt actually try to query the dataframe until it's passed with the .loc
-        currentSpecialCase = (_specialCasesDF['multipass'] == row['multipass']) & (
-                    _specialCasesDF['assignment'] == _assignmentCommonName)
+        # This is just a bool mask - it doesn't actually try to query the dataframe until it's passed with the .loc
+        currentSpecialCase = (_specialCasesDF['multipass'] == row['multipass']) & \
+                             (_specialCasesDF['assignment'] == _assignmentCommonName)
 
         # Skip over students who didn't submit - they already got a zero
         if row['Status'] == "Missing":
             if not _specialCasesDF.empty and len(_specialCasesDF.loc[currentSpecialCase]) != 0:
-                _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
-
+                # _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
+                # If the student didn't submit - I'm considering that as handled. 
+                _specialCasesDF.loc[currentSpecialCase, 'handled'] = "TRUE"
                 _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = "No Submission"
+
+                _gradescopeDF.at[i, 'lateness_comment'] = "No Submission." \
+                                                          "\nContact grader if you think this is a mistake."
             continue
 
         hoursLate = row['hours_late']
@@ -152,26 +222,9 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
                 _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
                 _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = "Special case is NOT Approved"
 
-            else:
-                if _specialCasesDF.loc[currentSpecialCase, 'extension_type'] in _statusAssignmentsDF['trigger'].values:
-                    # if the student requested more of an extension than they were entitled to
-                    currentStatusAssignment = \
-                        (_statusAssignmentScores['multipass'] == row['multipass']) & \
-                        _statusAssignmentScores['status_id'] == \
-                        (_statusAssignmentsDF.loc[_statusAssignmentsDF['trigger'] == _specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[0], 'id'].values[0])
-
-                    if len(_statusAssignmentScores.loc[currentStatusAssignment, 'student_score']) == 0 \
-                            or _statusAssignmentScores.loc[currentStatusAssignment, 'student_score'].values[0] > _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]:
-                        _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
-                        # _specialCasesDF.loc[
-                        #     currentSpecialCase, 'grader_notes'] = "Unable to process trigged special case. Limit exceeded."
-                        # reduce
-                    else:
-                        _statusAssignmentScores.loc[currentStatusAssignment, 'score'] -= \
-                        _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]
-
+            # We only want to apply a special case if it is not already flagged as handled.
+            elif not _specialCasesDF.loc[currentSpecialCase, 'handled'].values[0]:
                 # reduce the number of hours that a submission is late
-                #  accomplished by subtracting the days that a submission was extended by
                 hoursLate -= (_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]) * 24
                 if hoursLate < 0:
                     hoursLate = 0
@@ -217,4 +270,4 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
     else:
         print("...Done")
 
-    return _gradescopeDF, _specialCasesDF
+    return _gradescopeDF, _specialCasesDF, _statusAssignmentScoresDF
