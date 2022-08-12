@@ -18,6 +18,7 @@ class Canvas:
         self.m_students: pd.DataFrame = pd.DataFrame()
         self.m_assignments: pd.DataFrame = pd.DataFrame()
         self.m_statusAssignments: pd.DataFrame = pd.DataFrame()
+        self.m_statusAssignmentsScores: pd.DataFrame = pd.DataFrame()
         self.m_assignmentsToGrade: (pd.DataFrame, None) = None
 
     def __validate__(self):
@@ -177,7 +178,7 @@ class Canvas:
                 not _configFile['status_assignments'] or len(_configFile["assignments"]) == 0:
             print("No status assignments found")
         else:
-            self.m_statusAssignments = pd.DataFrame(_configFile['status_assignment']) \
+            self.m_statusAssignments = pd.DataFrame(_configFile['status_assignments']) \
                 if _configFile['status_assignments'] \
                 else pd.DataFrame()
             print(f"Loaded {len(self.m_statusAssignments)} status assignments")
@@ -245,7 +246,7 @@ class Canvas:
 
         header = {"Authorization": f"Bearer {self.API_KEY}"}
 
-        canvasAssignments:list = []
+        canvasAssignments: list = []
         for assignmentGroup in _assignmentGroups:
             url = f"{self.ENDPOINT}/api/v1/courses/{self.COURSE_ID}/assignment_groups/{assignmentGroup}/assignments"
             canvasAssignments.extend(self.__getPaginatedResponse__(url, header))
@@ -307,8 +308,60 @@ class Canvas:
         self.m_students = pd.DataFrame(studentList)
         print("...Done")
 
-    def updateStatusList(self):
-        pass
+    def updateStatusAssignmentScores(self):
+        if not self.__validate__():
+            return
+
+        if self.m_statusAssignments.empty:
+            print("Unable to fetch status assignments: No status assignments found")
+            return
+
+        if self.m_students.empty:
+            print("Unable to fetch status assignments: No students found")
+            return
+        # /api/v1/courses/:course/assignments/:assignmentid/submissions
+
+        header = {"Authorization": f"Bearer {self.API_KEY}"}
+        flags = "per_page=100"
+        print(f"Updating {len(self.m_statusAssignments)} status assignments...")
+
+        self.m_statusAssignmentsScores['multipass'] = ""
+        self.m_statusAssignmentsScores['student_score'] = 0.0
+        self.m_statusAssignmentsScores['status_id'] = 0
+
+        for assignment in self.m_statusAssignments['id'].values:
+            assignmentName = self.m_statusAssignments.loc[self.m_statusAssignments['id'] == assignment, 'name'].values
+            print(f"\tUpdating {assignmentName[0]} for {len(self.m_students)} students...", end='')
+
+            url = f"{self.ENDPOINT}/api/v1/courses/{self.COURSE_ID}/assignments/{assignment}/submissions"
+
+            res = self.__getPaginatedResponse__(url, header, flags=flags)
+            invalidScoreCounter = 0
+
+            for score in res:
+                if 'user_id' not in score.keys() or 'score' not in score.keys() or 'assignment_id' not in score.keys():
+                    invalidScoreCounter += 1
+                    continue
+
+                if score['assignment_id'] != assignment:
+                    invalidScoreCounter += 1
+                    continue
+                studentMultipass = self.m_students.loc[self.m_students['id'] == score['user_id'], 'sis_id']
+                if len(studentMultipass) == 0:
+                    invalidScoreCounter += 1
+                    continue
+
+                self.m_statusAssignmentsScores = pd.concat([self.m_statusAssignmentsScores,
+                               pd.DataFrame({
+                                   'multipass': str(studentMultipass.values[0]),
+                                   'student_score': float(score['score']),
+                                   'status_id': int(assignment)}, index=[0])
+                               ],ignore_index=True)
+            if invalidScoreCounter != 0:
+                print("Warning")
+                print(f"\t\t{invalidScoreCounter} invalid scores were downloaded")
+                continue
+            print("Done")
 
     def getCourseList(self):
         """
@@ -432,7 +485,7 @@ class Canvas:
         if type(_assignments) is not list or not _assignments:
             raise AttributeError("Unable to parse _assignments. Must be a list of strings.")
 
-        self.m_assignmentsToGrade = pd.DataFrame()
+        # self.m_assignmentsToGrade = pd.DataFrame()
         for assignment in _assignments:
             mappedAssignment: (pd.DataFrame, None) = self.getAssignmentFromCommonName(assignment)
             if mappedAssignment is None:
@@ -447,3 +500,9 @@ class Canvas:
 
     def getAssignmentsToGrade(self):
         return self.m_assignmentsToGrade
+
+    def getStatusAssignments(self):
+        return self.m_statusAssignments
+
+    def getStatusAssignmentScores(self):
+        return self.m_statusAssignmentsScores
