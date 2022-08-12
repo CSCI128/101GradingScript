@@ -5,6 +5,9 @@ import pandas as pd
 
 
 def standardGrading(_canvas: Canvas):
+    statusAssignments: pd.DataFrame = _canvas.getStatusAssignments()
+    _canvas.updateStatusAssignmentScores()
+    statusAssignmentScores: pd.DataFrame = _canvas.getStatusAssignmentScores()
     uiHelpers.setupAssignments(_canvas)
     gradescopeGrades: dict[int, pd.DataFrame] = uiHelpers.setupGradescopeGrades(_canvas)
     specialCasesDF = uiHelpers.setupSpecialCases()
@@ -18,7 +21,8 @@ def standardGrading(_canvas: Canvas):
         currentAssignment: pd.DataFrame = assignmentsToGrade.loc[assignmentsToGrade['id'] == assignmentID]
         print(f"Now grading {currentAssignment['name'].values[0]}...")
 
-        scaleFactor, standardPoints, maxPoints, xcScaleFactor = uiHelpers.setupScaling(currentAssignment['points'].values[0])
+        scaleFactor, standardPoints, maxPoints, xcScaleFactor = uiHelpers.setupScaling(
+            currentAssignment['points'].values[0])
         gradescopeGrades[assignmentID] = \
             grade.scaleScores(gradesDF, scaleFactor, standardPoints, maxPoints, xcScaleFactor)
 
@@ -27,7 +31,8 @@ def standardGrading(_canvas: Canvas):
             grade.scoreMissingAssignments(gradesDF, score=missingScore, exceptions=exceptions)
 
         gradescopeGrades[assignmentID], specialCasesDF = \
-            grade.calculateLatePenalty(gradesDF, specialCasesDF, currentAssignment['common_name'].values[0])
+            grade.calculateLatePenalty(gradesDF, specialCasesDF, statusAssignments, statusAssignmentScores,
+                                       currentAssignment['common_name'].values[0])
 
     print("\nGrades have been generated. Would you like to continue?")
     usrYN = uiHelpers.getUserInput("y/n")

@@ -92,8 +92,9 @@ def scoreMissingAssignments(_gradescopeDF: pd.DataFrame, score: float = 0, excep
     return _gradescopeDF
 
 
-def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFrame,
-                         _assignmentCommonName: str, latePenalty: list[float] = None):
+def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFrame, _statusAssignmentsDF: pd.DataFrame,
+                         _statusAssignmentScores: pd.DataFrame, _assignmentCommonName: str,
+                         latePenalty: list[float] = None):
     """
    Description
     --------
@@ -102,6 +103,8 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
     assignment at a time due to limitations in how .loc works in pandas and updating the master dataframe
     would require iterating over everywhere individually and merging them.
 
+    :param _statusAssignmentScores: The scores for the current each status assignment
+    :param _statusAssignmentsDF: The current status assignments
     :param _assignmentCommonName: The assignment name to look up in the special cases file.
     :param _gradescopeDF: the assignment being graded
     :param _specialCasesDF: the special cases for the assignment being graded
@@ -126,7 +129,8 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
     latePenaltyStudents = 0
     for i, row in _gradescopeDF.iterrows():
         # This is just a bool mask - it doesnt actually try to query the dataframe until it's passed with the .loc
-        currentSpecialCase = (_specialCasesDF['multipass'] == row['multipass']) & (_specialCasesDF['assignment'] == _assignmentCommonName)
+        currentSpecialCase = (_specialCasesDF['multipass'] == row['multipass']) & (
+                    _specialCasesDF['assignment'] == _assignmentCommonName)
 
         # Skip over students who didn't submit - they already got a zero
         if row['Status'] == "Missing":
@@ -139,12 +143,33 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         hoursLate = row['hours_late']
         # this is safe - if no students are found in the special cases, then it will be empty
         #  and the loop will just not run.
-        if not _specialCasesDF.empty and len(_specialCasesDF.loc[currentSpecialCase]) != 0:
+        if not _specialCasesDF.empty and len(_specialCasesDF.loc[currentSpecialCase]) != 0 and hoursLate == 0:
+            _specialCasesDF.loc[currentSpecialCase, 'handled'] = "TRUE"
+            _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = "Student submission was NOT late"
+
+        elif not _specialCasesDF.empty and len(_specialCasesDF.loc[currentSpecialCase]) != 0:
             if not _specialCasesDF.loc[currentSpecialCase, 'approved_by'].values[0]:
                 _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
-
                 _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = "Special case is NOT Approved"
+
             else:
+                if _specialCasesDF.loc[currentSpecialCase, 'extension_type'] in _statusAssignmentsDF['trigger'].values:
+                    # if the student requested more of an extension than they were entitled to
+                    currentStatusAssignment = \
+                        (_statusAssignmentScores['multipass'] == row['multipass']) & \
+                        _statusAssignmentScores['status_id'] == \
+                        (_statusAssignmentsDF.loc[_statusAssignmentsDF['trigger'] == _specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[0], 'id'].values[0])
+
+                    if len(_statusAssignmentScores.loc[currentStatusAssignment, 'student_score']) == 0 \
+                            or _statusAssignmentScores.loc[currentStatusAssignment, 'student_score'].values[0] > _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]:
+                        _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
+                        # _specialCasesDF.loc[
+                        #     currentSpecialCase, 'grader_notes'] = "Unable to process trigged special case. Limit exceeded."
+                        # reduce
+                    else:
+                        _statusAssignmentScores.loc[currentStatusAssignment, 'score'] -= \
+                        _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]
+
                 # reduce the number of hours that a submission is late
                 #  accomplished by subtracting the days that a submission was extended by
                 hoursLate -= (_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]) * 24
@@ -173,7 +198,8 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
                 i, 'lateness_comment'] = f"-{(1 - latePenalty[daysLate]) * 100:02.0f}%25: {daysLate} Days late"
 
     # the only possible case here is if a student has a special case requested but was not found in gradescope
-    if not _specialCasesDF.empty and specialCaseStudents != len(_specialCasesDF.loc[_specialCasesDF['assignment'] == _assignmentCommonName, 'multipass']):
+    if not _specialCasesDF.empty and specialCaseStudents != len(
+            _specialCasesDF.loc[_specialCasesDF['assignment'] == _assignmentCommonName, 'multipass']):
         print("\tNot all special cases where handled automatically...")
         # '!= True' here because it may be null or false depending on who entered the special case
         #  != because this is a bool mask - not a normal boolean expression
@@ -185,7 +211,8 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
     print(f"\t{specialCaseStudents} special cases were applied for {_assignmentCommonName}")
     print(f"\t{latePenaltyStudents} late penalties were applied for {_assignmentCommonName}")
 
-    if not _specialCasesDF.empty and specialCaseStudents != len(_specialCasesDF.loc[_specialCasesDF['assignment'] == _assignmentCommonName, 'multipass']):
+    if not _specialCasesDF.empty and specialCaseStudents != len(
+            _specialCasesDF.loc[_specialCasesDF['assignment'] == _assignmentCommonName, 'multipass']):
         print("...Warning")
     else:
         print("...Done")
