@@ -103,6 +103,7 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame, _specialCase
     1. submitted and 2. if they submitted late to avoid docking a status assignment unless necessary. It also validates
     that the student is actually able to request the extension that they requested. If the status assignment is
     available, update the points to post to canvas and automatically approve the extension.
+    This function will also add a comment to both the special cases sheet
     :param _statusAssignmentScoresDF: The scores for the current each status assignment
     :param _statusAssignmentsDF: The current status assignments
     :param _assignmentCommonName: The assignment name to look up in the special cases file.
@@ -123,13 +124,16 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame, _specialCase
             continue
 
         if _specialCasesDF.loc[currentSpecialCase, 'extension_type'] in _statusAssignmentsDF['trigger'].values:
+            # Create a bool mask for the current status assignment score for the student and the correct trigger
             currentStatusAssignment = \
                 (_statusAssignmentScoresDF['multipass'] == row['multipass']) & \
                 (_statusAssignmentScoresDF['status_id'] ==
                  (_statusAssignmentsDF.loc[_statusAssignmentsDF['trigger'] ==
                                            _specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[0],
                                            'id'].values[0]))
-
+            # Check to make sure that the student actually has a value for the status assignment
+            #  This should only happen if the student dropped, or recently added and does not yet have a score
+            #  for the assignment, either way, it will require manual intervention.
             if len(_statusAssignmentScoresDF.loc[currentStatusAssignment, 'student_score']) == 0:
 
                 _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
@@ -144,14 +148,20 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame, _specialCase
                 _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = \
                     "Unable to process triggered special case: Limit exceeded."
 
+            # Request is valid. approve and add a comment explaining that it was handled correctly.
             else:
                 _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = \
                     f"Automatically Approved on {datetime.date.today().strftime('%m-%d-%y')}"
+
                 _statusAssignmentScoresDF.loc[currentStatusAssignment, 'student_score'] -= \
                     _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]
+
                 _specialCasesDF.loc[currentSpecialCase, 'approved_by'] = "AUTOMATIC APPROVAL"
 
-    return _specialCasesDF, _statusAssignmentScoresDF
+                _gradescopeDF.at[i, 'Lateness Comment'] = \
+                    f"Extended with {_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]}"
+
+    return _gradescopeDF, _specialCasesDF, _statusAssignmentScoresDF
 
 
 def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFrame, _statusAssignmentsDF: pd.DataFrame,
@@ -164,7 +174,9 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
     Returns modified gradescope dataframe and special cases dataframe. This can only grade one
     assignment at a time due to limitations in how .loc works in pandas and updating the master dataframe
     would require iterating over everywhere individually and merging them.
-
+    This function also updates the lateness comment with student's special cases. If they have a status assignment
+    trigger in their special case then a comment saying that it was handled is also added, assuming that it was a valid
+    request.
     :param _statusAssignmentScoresDF: The scores for the current each status assignment
     :param _statusAssignmentsDF: The current status assignments
     :param _assignmentCommonName: The assignment name to look up in the special cases file.
@@ -188,7 +200,7 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
     print(f"Applying late penalties for {_assignmentCommonName}...")
     _gradescopeDF['lateness_comment'] = ""
 
-    _specialCasesDF, _statusAssignmentScoresDF = \
+    _gradescopeDF, _specialCasesDF, _statusAssignmentScoresDF = \
         validateAndUpdateStatusAssignments(_gradescopeDF, _specialCasesDF, _statusAssignmentsDF,
                                            _statusAssignmentScoresDF, _assignmentCommonName)
     specialCaseStudents = 0
@@ -222,13 +234,21 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
                 _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
                 _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = "Special case is NOT Approved"
 
+            elif _specialCasesDF.loc[currentSpecialCase, 'handled'].values[0]:
+                pass  # If there is already information in
             # We only want to apply a special case if it is not already flagged as handled.
-            elif not _specialCasesDF.loc[currentSpecialCase, 'handled'].values[0]:
+            else:
                 # reduce the number of hours that a submission is late
                 hoursLate -= (_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]) * 24
                 if hoursLate < 0:
                     hoursLate = 0
-
+                # Add a comment explaining any extension
+                if _gradescopeDF.at[i, 'Lateness Comment']:
+                    _gradescopeDF.at[i, 'Lateness Comment'] += \
+                        f"\nExtended by {_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]} days"
+                else:
+                    _gradescopeDF.at[i, 'Lateness Comment'] = \
+                        f"Extended by {_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]} days"
                 _specialCasesDF.loc[currentSpecialCase, 'handled'] = "TRUE"
 
                 specialCaseStudents += 1
@@ -245,10 +265,15 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
 
         # add students who actually received a penalty to a list
         #  and update comment stating where points went to
+        # %25 is the percent sign
         if daysLate != 0:
             latePenaltyStudents += 1
-            _gradescopeDF.at[
-                i, 'lateness_comment'] = f"-{(1 - latePenalty[daysLate]) * 100:02.0f}%25: {daysLate} Days late"
+            if _gradescopeDF.at[i, 'Lateness Comment']:
+                _gradescopeDF.at[i, 'lateness_comment'] += \
+                    f"\n-{(1 - latePenalty[daysLate]) * 100:02.0f}%25: {daysLate} Days late"
+            else:
+                _gradescopeDF.at[i, 'lateness_comment'] = \
+                    f"-{(1 - latePenalty[daysLate]) * 100:02.0f}%25: {daysLate} Days late"
 
     # the only possible case here is if a student has a special case requested but was not found in gradescope
     if not _specialCasesDF.empty and specialCaseStudents != len(
@@ -261,6 +286,7 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
                                            'full_name'].values.tolist():
             print(f"\t\t...{student} was unable to be handled automatically")
         print("\tCheck grader notes for more details")
+        print("\tIf student special case was not updated, they were not found in gradescope")
     print(f"\t{specialCaseStudents} special cases were applied for {_assignmentCommonName}")
     print(f"\t{latePenaltyStudents} late penalties were applied for {_assignmentCommonName}")
 
