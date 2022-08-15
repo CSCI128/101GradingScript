@@ -347,8 +347,12 @@ class Canvas:
                     invalidScoreCounter += 1
                     continue
                 studentMultipass = self.m_students.loc[self.m_students['id'] == score['user_id'], 'sis_id']
+
+                # When we pull scores, we also pull scores for students who dropped, and virtual students
+                #  like the test student. So in this case, those are expected invalid students, so don't increment
+                #  the counter
                 if len(studentMultipass) == 0:
-                    invalidScoreCounter += 1
+                    # invalidScoreCounter += 1
                     continue
 
                 self.m_statusAssignmentsScores = pd.concat([self.m_statusAssignmentsScores,
