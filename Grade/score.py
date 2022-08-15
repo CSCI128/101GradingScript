@@ -42,21 +42,10 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
             continue
 
         studentComment: str = ""
-        # get the student's special cases
-        studentSpecialCase: pd.DataFrame = _specialCasesDF.loc[_specialCasesDF['multipass'] == student['sis_id']]
-        # add a comment to the student's submission explaining any extension or special cases
-        if len(studentSpecialCase['extension_days']) != 0 and studentSpecialCase['extension_days'].values[0] > 0 and studentSpecialCase['handled'].values[0] == "TRUE":
-            studentComment = f"Extended by {studentSpecialCase['extension_days'].values[0]} days."
-            # Let students know where their late passes have gone
-            if studentSpecialCase['extension_type'].values[0] == "Late Pass":
-                studentComment += f"\n{studentSpecialCase['extension_days'].values[0]} late passes used"
-            # maybe add comment if case was not handled correctly
+        # If the student has comment explaining where points went
         if _gradescopeDF.loc[gradescopeCurrentStudent]['lateness_comment'].values[0]:
             # Handle if the student has another comment already
-            if studentComment:
-                studentComment += "\n"
-            studentComment += \
-                _gradescopeDF.loc[gradescopeCurrentStudent]['lateness_comment'].values[0]
+            studentComment = _gradescopeDF.loc[gradescopeCurrentStudent]['lateness_comment'].values[0]
 
         score = _gradescopeDF.loc[gradescopeCurrentStudent]['Total Score'].values[0]
 
