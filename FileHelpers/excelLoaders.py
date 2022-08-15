@@ -62,7 +62,7 @@ def loadSpecialCases():
         elif row['handled'] == False:
             specialCasesDF.at[i, 'handled'] = "FALSE"
 
-    # weird edge case with excel - it parses the spaces in names as unicode \xa0 - which is a pain - changing to a _
+    # weird edge case with Excel - it parses the spaces in names as unicode \xa0 - which is a pain - changing to a _
     specialCasesDF.columns = specialCasesDF.columns.str.replace('\xa0', '_')
     specialCasesDF.columns = specialCasesDF.columns.str.replace(' ', '_')
 
@@ -81,5 +81,11 @@ def loadSpecialCases():
 
     # fill the NaNs in the approved by col with empty strings
     specialCasesDF['approved_by'] = specialCasesDF['approved_by'].fillna('')
+
+    # fill the NaNs in the handled col with empty strings
+    specialCasesDF['handled'] = specialCasesDF['handled'].fillna('')
+
+    # fill the NaNs in the grader notes col with empty strings
+    specialCasesDF['handled'] = specialCasesDF['grader_notes'].fillna('')
 
     return specialCasesDF
