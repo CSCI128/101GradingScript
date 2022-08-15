@@ -42,21 +42,10 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
             continue
 
         studentComment: str = ""
-        # get the student's special cases
-        studentSpecialCase: pd.DataFrame = _specialCasesDF.loc[_specialCasesDF['multipass'] == student['sis_id']]
-        # add a comment to the student's submission explaining any extension or special cases
-        if len(studentSpecialCase['extension_days']) != 0 and studentSpecialCase['extension_days'].values[0] > 0 and studentSpecialCase['handled'].values[0] == "TRUE":
-            studentComment = f"Extended by {studentSpecialCase['extension_days'].values[0]} days."
-            # Let students know where their late passes have gone
-            if studentSpecialCase['extension_type'].values[0] == "Late Pass":
-                studentComment += f"\n{studentSpecialCase['extension_days'].values[0]} late passes used"
-            # maybe add comment if case was not handled correctly
+        # If the student has comment explaining where points went
         if _gradescopeDF.loc[gradescopeCurrentStudent]['lateness_comment'].values[0]:
             # Handle if the student has another comment already
-            if studentComment:
-                studentComment += "\n"
-            studentComment += \
-                _gradescopeDF.loc[gradescopeCurrentStudent]['lateness_comment'].values[0]
+            studentComment = _gradescopeDF.loc[gradescopeCurrentStudent]['lateness_comment'].values[0]
 
         score = _gradescopeDF.loc[gradescopeCurrentStudent]['Total Score'].values[0]
 
@@ -79,6 +68,27 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
         print("Done")
 
     return gradedAssignment
+
+
+def createCanvasScoresForStatusAssignments(statusAssignmentScoresDF: pd.DataFrame, _students: pd.DataFrame) \
+        -> dict[str, any]:
+    if not isinstance(statusAssignmentScoresDF, pd.DataFrame):
+        raise TypeError("Status Assignments MUST be passed as a Pandas DataFrame")
+    if not isinstance(_students, pd.DataFrame):
+        raise TypeError("Students MUST be passed as a Pandas DataFrame")
+
+    # TODO currently the way that scoring is implemented will only allow one status assignment to be updated
+    scoredStatusAssignments: dict[str, any] = {}
+    for i, assignment in statusAssignmentScoresDF.iterrows():
+        student = _students.loc[_students['sis_id'] == assignment['multipass']]
+        scoredStatusAssignments[student['id'].values[0]] = {
+            'name': student['name'].values[0],
+            'id': str(student['id'].values[0]),
+            'score': assignment['student_score'],
+            'comment': ""
+        }
+
+    return scoredStatusAssignments
 
 
 def createCanvasScoresForAssignments(_gradescopeAssignments: dict[int, pd.DataFrame],
@@ -134,5 +144,11 @@ def createCanvasScoresForAssignments(_gradescopeAssignments: dict[int, pd.DataFr
                                _specialCasesDF.loc[_specialCasesDF['assignment'] == row['common_name']],
                                students, row['id'])
 
+    statusAssignmentsScores = _canvas.getStatusAssignmentScores()
+    print(f"Creating scores for {len(statusAssignmentsScores)} status assignments...")
+    assignmentsToPost[statusAssignmentsScores['status_id'].values[0]] = \
+        createCanvasScoresForStatusAssignments(statusAssignmentsScores, students)
+    # add the status assignments to the actively graded assignments
+    _canvas.selectAssignmentsToGrade([_canvas.getAssignmentFromID(statusAssignmentsScores['status_id'].values[0])['common_name'].values[0]])
     print("...Done")
     return assignmentsToPost

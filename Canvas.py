@@ -17,6 +17,8 @@ class Canvas:
         self.ENDPOINT: str = _ENDPOINT
         self.m_students: pd.DataFrame = pd.DataFrame()
         self.m_assignments: pd.DataFrame = pd.DataFrame()
+        self.m_statusAssignments: pd.DataFrame = pd.DataFrame()
+        self.m_statusAssignmentsScores: pd.DataFrame = pd.DataFrame()
         self.m_assignmentsToGrade: (pd.DataFrame, None) = None
 
     def __validate__(self):
@@ -172,6 +174,14 @@ class Canvas:
         if not _configFile["assignments"] or len(_configFile["assignments"]) == 0:
             print("No assignments found")
             return None
+        if 'status_assignments' not in _configFile.keys() or \
+                not _configFile['status_assignments'] or len(_configFile["assignments"]) == 0:
+            print("No status assignments found")
+        else:
+            self.m_statusAssignments = pd.DataFrame(_configFile['status_assignments']) \
+                if _configFile['status_assignments'] \
+                else pd.DataFrame()
+            print(f"Loaded {len(self.m_statusAssignments)} status assignments")
 
         self.m_assignments = pd.DataFrame(_configFile["assignments"])
         print(f"Loaded {len(self.m_assignments)} assignments")
@@ -209,7 +219,7 @@ class Canvas:
 
         return assignmentGroups
 
-    def getAssignmentsFromCanvas(self, _assignmentGroups):
+    def getAssignmentsFromCanvas(self, _assignmentGroups) -> list:
         """
         This function pulls assignments from canvas that it finds in the groups passed as parameters. It strips out
         the unnecessary fields provided by the canvas api.
@@ -229,20 +239,20 @@ class Canvas:
         #  - gets list of assignments in a group
 
         if not self.__validate__():
-            return None
+            return []
 
         if type(_assignmentGroups) is not list:
             raise TypeError("Assignment groups must be a list")
 
         header = {"Authorization": f"Bearer {self.API_KEY}"}
 
-        canvasAssignments = []
+        canvasAssignments: list = []
         for assignmentGroup in _assignmentGroups:
             url = f"{self.ENDPOINT}/api/v1/courses/{self.COURSE_ID}/assignment_groups/{assignmentGroup}/assignments"
             canvasAssignments.extend(self.__getPaginatedResponse__(url, header))
 
         print(f"Returned {len(canvasAssignments)} assignments")
-        parsedAssignments = []
+        parsedAssignments: list = []
         for assignment in canvasAssignments:
             newAssignment = dict()
             newAssignment['common_name'] = self.__getCommonName__(assignment['name'])
@@ -275,7 +285,7 @@ class Canvas:
 
         studentList: list[dict] = []
         # So when the registrar adds students to a class, we don't have their CWID or multipass
-        #  Naturally, this isn't documented anywhere so through trial and error i found the fields that will always
+        #  Naturally, this isn't documented anywhere so through trial and error I found the fields that will always
         #  be included when we pull the students.
         print("\tProcessing students...", end='')
         invalidStudents: int = 0
@@ -298,13 +308,72 @@ class Canvas:
         self.m_students = pd.DataFrame(studentList)
         print("...Done")
 
+    def updateStatusAssignmentScores(self):
+        if not self.__validate__():
+            return
+
+        if self.m_statusAssignments.empty:
+            print("Unable to fetch status assignments: No status assignments found")
+            return
+
+        if self.m_students.empty:
+            print("Unable to fetch status assignments: No students found")
+            return
+        # /api/v1/courses/:course/assignments/:assignmentid/submissions
+
+        header = {"Authorization": f"Bearer {self.API_KEY}"}
+        flags = "per_page=100"
+        print(f"Updating {len(self.m_statusAssignments)} status assignments...")
+
+        self.m_statusAssignmentsScores['multipass'] = ""
+        self.m_statusAssignmentsScores['student_score'] = 0.0
+        self.m_statusAssignmentsScores['status_id'] = 0
+
+        for assignment in self.m_statusAssignments['id'].values:
+            assignmentName = self.m_statusAssignments.loc[self.m_statusAssignments['id'] == assignment, 'name'].values
+            print(f"\tUpdating {assignmentName[0]} for {len(self.m_students)} students...", end='')
+
+            url = f"{self.ENDPOINT}/api/v1/courses/{self.COURSE_ID}/assignments/{assignment}/submissions"
+
+            res = self.__getPaginatedResponse__(url, header, flags=flags)
+            invalidScoreCounter = 0
+
+            for score in res:
+                if 'user_id' not in score.keys() or 'score' not in score.keys() or 'assignment_id' not in score.keys():
+                    invalidScoreCounter += 1
+                    continue
+
+                if score['assignment_id'] != assignment:
+                    invalidScoreCounter += 1
+                    continue
+                studentMultipass = self.m_students.loc[self.m_students['id'] == score['user_id'], 'sis_id']
+
+                # When we pull scores, we also pull scores for students who dropped, and virtual students
+                #  like the test student. So in this case, those are expected invalid students, so don't increment
+                #  the counter
+                if len(studentMultipass) == 0:
+                    # invalidScoreCounter += 1
+                    continue
+
+                self.m_statusAssignmentsScores = pd.concat([self.m_statusAssignmentsScores,
+                               pd.DataFrame({
+                                   'multipass': str(studentMultipass.values[0]),
+                                   'student_score': float(score['score']),
+                                   'status_id': int(assignment)}, index=[0])
+                               ],ignore_index=True)
+            if invalidScoreCounter != 0:
+                print("Warning")
+                print(f"\t\t{invalidScoreCounter} invalid scores were downloaded")
+                continue
+            print("Done")
+
     def getCourseList(self):
         """
         Retrieves the list of courses from canvas that the user in enrolled in, then filters out the student ones
         to ensure that they will have write access.
         :return: The list of courses with the course ID, name, and enrollment type
         """
-        # we are getting the list of course IDs here so we dont need to do a full validation
+        # we are getting the list of course IDs here, so we don't need to do a full validation
         # api/v1/users/:userid/courses
         if not self.API_KEY or not self.USER_ID:
             return None
@@ -388,18 +457,22 @@ class Canvas:
     def getAssignmentFromCommonName(self, _assignment: str) -> (pd.DataFrame, None):
 
         filteredAssignments: pd.DataFrame = self.m_assignments.loc[self.m_assignments['common_name'] == _assignment]
-
+        # Validate assignments and correctly map assignment.
         if len(filteredAssignments) > 1:
             print(f"Many assignments matching {_assignment} found. Please enter the id the correct one")
+
             for i, assignment in filteredAssignments.iterrows():
                 print(f"{assignment['id']}\t{assignment['name']}\t{assignment['points']}")
             correctID = str(input("(id: 123456): "))
+
             return filteredAssignments.loc[filteredAssignments['id'] == correctID]
+
         elif len(filteredAssignments) == 0:
             print(f"Unable to map assignment automatically. {_assignment} is unknown.")
             # todo add support to manually enter assignment details
             print("Assignment is being ignored.")
             return None
+
         return filteredAssignments
 
     def validateAssignment(self, commonName: (str, None) = None, canvasID: (int, None) = None) -> bool:
@@ -419,8 +492,9 @@ class Canvas:
 
         if type(_assignments) is not list or not _assignments:
             raise AttributeError("Unable to parse _assignments. Must be a list of strings.")
+        if self.m_assignmentsToGrade is None:
+            self.m_assignmentsToGrade = pd.DataFrame()
 
-        self.m_assignmentsToGrade = pd.DataFrame()
         for assignment in _assignments:
             mappedAssignment: (pd.DataFrame, None) = self.getAssignmentFromCommonName(assignment)
             if mappedAssignment is None:
@@ -435,3 +509,9 @@ class Canvas:
 
     def getAssignmentsToGrade(self):
         return self.m_assignmentsToGrade
+
+    def getStatusAssignments(self):
+        return self.m_statusAssignments
+
+    def getStatusAssignmentScores(self):
+        return self.m_statusAssignmentsScores
