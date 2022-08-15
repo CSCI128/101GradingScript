@@ -156,7 +156,7 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
 
                 _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
                 _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = \
-                    "Unable to process triggered special case: No status assignment found for student."
+                    "Unable to process triggered special case: No status assignment found for student"
 
             # if the student requested more of an extension than they were entitled to
             elif _statusAssignmentScoresDF.loc[currentStatusAssignment, 'student_score'].values[0] < \
@@ -164,7 +164,7 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
 
                 _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
                 _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = \
-                    "Unable to process triggered special case: Limit exceeded."
+                    "Unable to process triggered special case: Limit exceeded"
 
             # Request is valid. approve and add a comment explaining that it was handled correctly.
             else:

@@ -86,6 +86,6 @@ def loadSpecialCases():
     specialCasesDF['handled'] = specialCasesDF['handled'].fillna('')
 
     # fill the NaNs in the grader notes col with empty strings
-    specialCasesDF['handled'] = specialCasesDF['grader_notes'].fillna('')
+    specialCasesDF['grader_notes'] = specialCasesDF['grader_notes'].fillna('')
 
     return specialCasesDF
