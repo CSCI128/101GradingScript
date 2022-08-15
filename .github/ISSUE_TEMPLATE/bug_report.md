@@ -1,7 +1,7 @@
 ---
 name: Bug report
 about: File a bug report
-title: ''
+title: "[BUG] "
 labels: need analysis
 assignees: ''
 
@@ -25,3 +25,5 @@ How should this behave?
 - [ ] What changes should 
 - [ ] be made
 - [ ] to make this work
+
+Please add labels to explain where this issue occurs
