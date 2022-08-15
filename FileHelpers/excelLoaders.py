@@ -6,13 +6,13 @@ DEFAULT_SPECIAL_CASES_SEARCH_PATH = "special_cases/special_cases.xlsx"
 
 def loadExcel(_filename, promptIfError: bool = False, directoriesToCheck: list[str] = None):
     """
-    This function validates that an excel file with the name '_filename' exists
+    This function validates that an Excel file with the name '_filename' exists
     If it does, it loads it in to a Pandas dataframe to be returned. In the event of an error,
     an empty pandas dataframe is returned
     :param directoriesToCheck: fileHelper.findFile
     :param promptIfError: fileHelper.findFile
-    :param _filename: the excel filename to load
-    :return: the dataframe from the excel file or an empty dataframe if loaded failed
+    :param _filename: the Excel filename to load
+    :return: the dataframe from the Excel file or an empty dataframe if loaded failed
     """
     print(f"Attempting to load {_filename}...")
 
@@ -52,7 +52,7 @@ def loadSpecialCases():
         elif row['handled'] == False:
             specialCasesDF.at[i, 'handled'] = "FALSE"
 
-    # weird edge case with excel - it parses the spaces in names as unicode \xa0 - which is a pain - changing to a _
+    # weird edge case with Excel - it parses the spaces in names as unicode \xa0 - which is a pain - changing to a _
     specialCasesDF.columns = specialCasesDF.columns.str.replace('\xa0', '_')
     specialCasesDF.columns = specialCasesDF.columns.str.replace(' ', '_')
 
@@ -71,5 +71,11 @@ def loadSpecialCases():
 
     # fill the NaNs in the approved by col with empty strings
     specialCasesDF['approved_by'] = specialCasesDF['approved_by'].fillna('')
+
+    # fill the NaNs in the handled col with empty strings
+    specialCasesDF['handled'] = specialCasesDF['handled'].fillna('')
+
+    # fill the NaNs in the grader notes col with empty strings
+    specialCasesDF['handled'] = specialCasesDF['grader_notes'].fillna('')
 
     return specialCasesDF

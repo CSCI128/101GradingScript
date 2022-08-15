@@ -347,8 +347,12 @@ class Canvas:
                     invalidScoreCounter += 1
                     continue
                 studentMultipass = self.m_students.loc[self.m_students['id'] == score['user_id'], 'sis_id']
+
+                # When we pull scores, we also pull scores for students who dropped, and virtual students
+                #  like the test student. So in this case, those are expected invalid students, so don't increment
+                #  the counter
                 if len(studentMultipass) == 0:
-                    invalidScoreCounter += 1
+                    # invalidScoreCounter += 1
                     continue
 
                 self.m_statusAssignmentsScores = pd.concat([self.m_statusAssignmentsScores,
@@ -453,18 +457,22 @@ class Canvas:
     def getAssignmentFromCommonName(self, _assignment: str) -> (pd.DataFrame, None):
 
         filteredAssignments: pd.DataFrame = self.m_assignments.loc[self.m_assignments['common_name'] == _assignment]
-
+        # Validate assignments and correctly map assignment.
         if len(filteredAssignments) > 1:
             print(f"Many assignments matching {_assignment} found. Please enter the id the correct one")
+
             for i, assignment in filteredAssignments.iterrows():
                 print(f"{assignment['id']}\t{assignment['name']}\t{assignment['points']}")
             correctID = str(input("(id: 123456): "))
+
             return filteredAssignments.loc[filteredAssignments['id'] == correctID]
+
         elif len(filteredAssignments) == 0:
             print(f"Unable to map assignment automatically. {_assignment} is unknown.")
             # todo add support to manually enter assignment details
             print("Assignment is being ignored.")
             return None
+
         return filteredAssignments
 
     def validateAssignment(self, commonName: (str, None) = None, canvasID: (int, None) = None) -> bool:
@@ -484,8 +492,9 @@ class Canvas:
 
         if type(_assignments) is not list or not _assignments:
             raise AttributeError("Unable to parse _assignments. Must be a list of strings.")
+        if self.m_assignmentsToGrade is None:
+            self.m_assignmentsToGrade = pd.DataFrame()
 
-        # self.m_assignmentsToGrade = pd.DataFrame()
         for assignment in _assignments:
             mappedAssignment: (pd.DataFrame, None) = self.getAssignmentFromCommonName(assignment)
             if mappedAssignment is None:
