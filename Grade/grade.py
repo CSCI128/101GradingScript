@@ -12,6 +12,9 @@ has to be committed by the user using a different module.
 import datetime
 import math
 import pandas as pd
+import inflect
+
+p = inflect.engine()
 
 
 def scaleScores(_gradescopeDF: pd.DataFrame, _scaleFactor: float,
@@ -130,7 +133,12 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
         currentSpecialCase = (_specialCasesDF['multipass'] == row['multipass']) & \
                              (_specialCasesDF['assignment'] == _assignmentCommonName)
 
+        # If there is no special case for the student
         if len(_specialCasesDF.loc[currentSpecialCase]) == 0:
+            continue
+
+        # If the special case has already been handled - do nothing
+        elif _specialCasesDF.loc[currentSpecialCase, 'handled'].values[0] != "":
             continue
 
         if _specialCasesDF.loc[currentSpecialCase, 'extension_type'] in _statusAssignmentsDF['trigger'].values:
@@ -167,9 +175,12 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
                     _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]
 
                 _specialCasesDF.loc[currentSpecialCase, 'approved_by'] = "AUTOMATIC APPROVAL"
+                extensionMessage: str = p.plural(_specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[0],
+                                                 _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0])
 
-                _gradescopeDF.at[i, 'Lateness Comment'] = \
-                    f"Extended with {_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]}"
+                _gradescopeDF.at[i, 'lateness_comment'] = \
+                    f"Extended with {_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]} " + \
+                    f"{extensionMessage}"
 
     return _gradescopeDF, _specialCasesDF, _statusAssignmentScoresDF
 
@@ -218,7 +229,7 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
     specialCaseStudents = 0
     latePenaltyStudents = 0
     for i, row in _gradescopeDF.iterrows():
-        # This is just a bool mask - it doesn't actually try to query the dataframe until it's passed with the .loc
+        # This is just a bool mask - it allows us to filter out the rows that don't meet the criteria
         currentSpecialCase = (_specialCasesDF['multipass'] == row['multipass']) & \
                              (_specialCasesDF['assignment'] == _assignmentCommonName)
 
@@ -244,23 +255,31 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         elif not _specialCasesDF.empty and len(_specialCasesDF.loc[currentSpecialCase]) != 0:
             if not _specialCasesDF.loc[currentSpecialCase, 'approved_by'].values[0]:
                 _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
-                _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = "Special case is NOT Approved"
 
-            elif _specialCasesDF.loc[currentSpecialCase, 'handled'].values[0]:
-                pass  # If there is already information in
+                if _specialCasesDF.loc[currentSpecialCase, 'grader_notes'].values[0]:
+                    _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] += "; Special case is NOT Approved"
+                else:
+                    _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = "Special case is NOT Approved"
+
+            # If the special case has already been handled
+            elif _specialCasesDF.loc[currentSpecialCase, 'handled'].values[0] != "":
+                pass
             # We only want to apply a special case if it is not already flagged as handled.
             else:
                 # reduce the number of hours that a submission is late
                 hoursLate -= (_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]) * 24
                 if hoursLate < 0:
                     hoursLate = 0
+
+                pluralizedDays: str = p.plural("day", _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0])
+
                 # Add a comment explaining any extension
-                if _gradescopeDF.at[i, 'Lateness Comment']:
-                    _gradescopeDF.at[i, 'Lateness Comment'] += \
-                        f"\nExtended by {_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]} days"
+                if _gradescopeDF.at[i, 'lateness_comment']:
+                    _gradescopeDF.at[i, 'lateness_comment'] += \
+                        f"\nExtended by {_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]} {pluralizedDays}"
                 else:
-                    _gradescopeDF.at[i, 'Lateness Comment'] = \
-                        f"Extended by {_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]} days"
+                    _gradescopeDF.at[i, 'lateness_comment'] = \
+                        f"Extended by {_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]} {pluralizedDays}"
                 _specialCasesDF.loc[currentSpecialCase, 'handled'] = "TRUE"
 
                 specialCaseStudents += 1
@@ -280,15 +299,17 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         # %25 is the percent sign
         if daysLate != 0:
             latePenaltyStudents += 1
-            if _gradescopeDF.at[i, 'Lateness Comment']:
+            pluralizedDays: str = p.plural("day", daysLate)
+            if _gradescopeDF.at[i, 'lateness_comment']:
                 _gradescopeDF.at[i, 'lateness_comment'] += \
-                    f"\n-{(1 - latePenalty[daysLate]) * 100:02.0f}%25: {daysLate} Days late"
+                    f"\n-{(1 - latePenalty[daysLate]) * 100:02.0f}%25: {daysLate} {pluralizedDays} late"
             else:
                 _gradescopeDF.at[i, 'lateness_comment'] = \
-                    f"-{(1 - latePenalty[daysLate]) * 100:02.0f}%25: {daysLate} Days late"
+                    f"-{(1 - latePenalty[daysLate]) * 100:02.0f}%25: {daysLate} {pluralizedDays} late"
 
     # the only possible case here is if a student has a special case requested but was not found in gradescope
     if not _specialCasesDF.empty and specialCaseStudents != len(
+
             _specialCasesDF.loc[_specialCasesDF['assignment'] == _assignmentCommonName, 'multipass']):
         print("\tNot all special cases where handled automatically...")
         # '!= True' here because it may be null or false depending on who entered the special case
