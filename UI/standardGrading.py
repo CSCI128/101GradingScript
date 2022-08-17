@@ -53,7 +53,7 @@ def standardGrading(_canvas: Canvas):
         return False
 
     print("\n===\tPosting Scores\t===\n")
-    if post.writeGrades(gradescopeGrades, assignmentsToGrade) \
+    if post.writeUpdatedGradesheets(gradescopeGrades, assignmentsToGrade) \
             and post.updateSpecialCases(specialCasesDF) \
             and post.postToCanvas(_canvas, studentScores):
         return True
