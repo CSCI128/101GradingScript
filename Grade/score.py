@@ -1,4 +1,7 @@
 """
+Description
+================
+
 This module contains the functions used to create Canvas scores. Basically,
 all the functions in here merge the Dataframes produced by ``Grade.grade``.
 This module does **not** create new grades nor does it modify existing grades.
@@ -9,29 +12,30 @@ and the source data is **not** modified.
 import pandas as pd
 from Canvas import Canvas
 
+# TODO Clean up unnecessary fields from this file.
 
-def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFrame,
-                       _students: pd.DataFrame, _assignmentID: int):
+
+def createCanvasScores(_gradescopeDF: pd.DataFrame,
+                       _students: pd.DataFrame) -> dict[str, any]:
     """
+    :Description:
 
-    :param _assignmentID:
-    :param _gradescopeDF:
-    :param _specialCasesDF:
-    :param _students:
-    :return:
+    This function generates scores for **one** assignment. It builds all the comments that will be sent to the student
+    in Canvas and assigns scores for each student.
+
+    See ``score.createCanvasScoresForAssignments`` for an example of what this looks like.
+
+    :param _gradescopeDF: The gradesheet to create scores from
+    :param _students: the current canvas roaster.
+
+    :return: the dict representation of the assignment scores.
     """
 
     if not isinstance(_gradescopeDF, pd.DataFrame):
         raise TypeError("Gradescope Grades MUST be passed as a Pandas DataFrame")
 
-    if not isinstance(_specialCasesDF, pd.DataFrame):
-        raise TypeError("Special cases MUST be passed as a Pandas DataFrame")
-
     if not isinstance(_students, pd.DataFrame):
         raise TypeError("Students MUST be passed as a Pandas DataFrame")
-
-    if type(_assignmentID) is not int or len(str(_assignmentID)) < 5:
-        raise TypeError("Assignment ID MUST be a int containing a valid Canvas assignment id")
 
     gradedAssignment: dict = {}
     _students['graded'] = False
@@ -72,6 +76,23 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFram
 
 def createCanvasScoresForStatusAssignments(statusAssignmentScoresDF: pd.DataFrame, _students: pd.DataFrame) \
         -> dict[str, any]:
+    """
+    :Description:
+
+    Creates score objects from the status assignment scores.
+
+    This method is likely to phased out in favor of a solution that does not require handling these assignments
+    differently from normal assignments.
+
+    Currently, the way that this is implemented will be able to update **1** status assignment regardless of the
+    presence of many in the config file.
+
+    :param statusAssignmentScoresDF: The current scores for students for **all** status assignment
+    :param _students: the list of students. Not *really* needed as we don't super care about the students name at this
+            point and already have their canvas IDs in this grade sheet.
+
+    :return: the scores for the status assignments in a dict.
+    """
     if not isinstance(statusAssignmentScoresDF, pd.DataFrame):
         raise TypeError("Status Assignments MUST be passed as a Pandas DataFrame")
     if not isinstance(_students, pd.DataFrame):
@@ -92,41 +113,44 @@ def createCanvasScoresForStatusAssignments(statusAssignmentScoresDF: pd.DataFram
 
 
 def createCanvasScoresForAssignments(_gradescopeAssignments: dict[int, pd.DataFrame],
-                                     _specialCasesDF: pd.DataFrame, _canvas: Canvas, _assignments: pd.DataFrame) \
-        -> dict[str, dict[str, any]]:
+                                     _canvas: Canvas, _assignments: pd.DataFrame) -> dict[str, dict[str, any]]:
     """
-   Description
-    --------
+    :Description:
+
     This function grades a batch of assignments and creates a dict that can be posted to canvas. At a basic level,
     this function is mapping the gradescope scores that have been put through processing to canvas student ids.
-   Example
-    --------
-    {
-     assignment_id: {
-      id: {
-       name:
 
-       id:
+    This function calls ``createCanvasScores`` internally to generate the scores for each assignment.
 
-       score:
+    This function also calls ``createCanvasScoresForStatusAssignments`` internally to create scores for those
+    assignments, but that functionality is likely to be removed in favor of a solution that treats status assignments
+    the same as normal assignments.
 
-       comments:
-      },
-     }
-    }
 
-    :param _assignments:
-    :param _gradescopeAssignments:
-    :param _specialCasesDF:
-    :param _canvas:
+    :Example:
+
+    .. code-block:: json
+
+        {
+             assignment_id: {
+                  id: {
+                       name:
+                       id:
+                       score:
+                       comments:
+                }
+             }
+        }
+
+    :param _assignments: A dataframe containing all the assignments to grade.
+    :param _gradescopeAssignments: A dict containing the assignment ids mapped to the grade sheets
+    :param _canvas: the canvas object.
+
     :return: A map containing the assignment id and the scores to be posted under that id.
     """
     if type(_gradescopeAssignments) is not dict:
         raise TypeError("Gradescope assignments must be passed as a dict mapping the id to the assignment as "
                         "a Pandas DataFrame")
-
-    if not isinstance(_specialCasesDF, pd.DataFrame):
-        raise TypeError("Special cases MUST be passed as a Pandas DataFrame")
 
     if not isinstance(_canvas, Canvas):
         raise TypeError("Canvas must be an instance of the Canvas api Wrapper")
@@ -141,8 +165,7 @@ def createCanvasScoresForAssignments(_gradescopeAssignments: dict[int, pd.DataFr
         print(f"\tScoring {row['name']} for {len(students)} students...", end='')
         assignmentsToPost[row['id']] = \
             createCanvasScores(_gradescopeAssignments[row['id']],
-                               _specialCasesDF.loc[_specialCasesDF['assignment'] == row['common_name']],
-                               students, row['id'])
+                               students)
 
     statusAssignmentsScores = _canvas.getStatusAssignmentScores()
     print(f"Creating scores for {len(statusAssignmentsScores)} status assignments...")
