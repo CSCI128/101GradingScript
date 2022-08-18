@@ -1,4 +1,7 @@
 """
+Description
+================
+
 This module contains the functions that grade students assignments.
 They work directly with the Gradescope assignment Dataframe and the special cases Dataframe
 (and eventually the page flagging dataframe)
@@ -14,15 +17,16 @@ import pandas as pd
 def scaleScores(_gradescopeDF: pd.DataFrame, _scaleFactor: float,
                 assignmentPoints: float = None, maxScore: float = None, XCScaleFactor: float = None) -> pd.DataFrame:
     """
-   Description
-    --------
+    :Description:
+
     This function scales the scores by the scale factor. It also takes into account different extra credit scaling.
     This function does NOT consider lateness or page flagging in its calculations
-   Example
-    --------
+
+    :Examples:
+
     If we have an assignment that is worth 5 points, but has the option to earn a quarter point of extra credit for each
     point earned over the normal amount we would set
-    _scaleFactor = 1, assignmentPoints = 5, XCScaleFactor = .25
+    ``_scaleFactor = 1, assignmentPoints = 5, XCScaleFactor = .25``
 
     :param _gradescopeDF: the current grades for the current assigment
     :param _scaleFactor: the scaling to apply to each grade
@@ -33,6 +37,7 @@ def scaleScores(_gradescopeDF: pd.DataFrame, _scaleFactor: float,
     :param XCScaleFactor: the scaling to apply to any points above the 'assignmentPoints' var.
             If not set, function assumes that normal scaling (as defined in '_scaleFactor')
             also applies to extra credit
+
     :return: the modified gradescope dataframe.
     """
     # Validation - we need to enforce types for the gradescope stuff
@@ -65,15 +70,16 @@ def scaleScores(_gradescopeDF: pd.DataFrame, _scaleFactor: float,
 
 def scoreMissingAssignments(_gradescopeDF: pd.DataFrame, score: float = 0, exceptions=None):
     """
-   Description
-    --------
+    :Description:
+
     This function handles the students who didn't submit their work at the time that this script is being run.
     Supports not scoring missing work as well.
 
     :param _gradescopeDF: The assignment being graded
     :param score: The score to give students or None if they shouldn't be scored.
     :param exceptions: Any exceptions that exist with the students multipass, and the score they should receive
-    Follows the same rules as score - not currently implemented Might want to expand to include sections
+            Follows the same rules as score - not currently implemented. Might want to expand to include sections
+
     :return: the modified gradescope dataframe
     """
     if not isinstance(_gradescopeDF, pd.DataFrame):
@@ -93,22 +99,26 @@ def scoreMissingAssignments(_gradescopeDF: pd.DataFrame, score: float = 0, excep
     return _gradescopeDF
 
 
-def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFrame,
+def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
+                                       _specialCasesDF: pd.DataFrame,
                                        _statusAssignmentsDF: pd.DataFrame,
-                                       _statusAssignmentScoresDF: pd.DataFrame, _assignmentCommonName: str):
+                                       _statusAssignmentScoresDF: pd.DataFrame,
+                                       _assignmentCommonName: str) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
     """
-   Description
-    --------
+    :Description:
+
     This function updates the status assignments according to special case file. It checks to see if the student both
-    1. submitted and 2. if they submitted late to avoid docking a status assignment unless necessary. It also validates
+    submitted and if they submitted late to avoid docking a status assignment unless necessary. It also validates
     that the student is actually able to request the extension that they requested. If the status assignment is
     available, update the points to post to canvas and automatically approve the extension.
-    This function will also add a comment to both the special cases sheet
+    This function will also add a comment to both the special cases sheet and the students submission
+
     :param _statusAssignmentScoresDF: The scores for the current each status assignment
     :param _statusAssignmentsDF: The current status assignments
     :param _assignmentCommonName: The assignment name to look up in the special cases file.
     :param _gradescopeDF: the assignment being graded
     :param _specialCasesDF: the special cases for the assignment being graded
+
     :return: the updated special cases dataframe, the updated gradescope dataframe, and the status assignment scores dataframe
     """
 
@@ -168,21 +178,23 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
                          _statusAssignmentScoresDF: pd.DataFrame, _assignmentCommonName: str,
                          latePenalty: list[float] = None):
     """
-   Description
-    --------
+    :Description:
+
     This function calculates the late penalty according to the special cases
     Returns modified gradescope dataframe and special cases dataframe. This can only grade one
-    assignment at a time due to limitations in how .loc works in pandas and updating the master dataframe
+    assignment at a time due to limitations in how ``.loc`` works in pandas and updating the master dataframe
     would require iterating over everywhere individually and merging them.
     This function also updates the lateness comment with student's special cases. If they have a status assignment
     trigger in their special case then a comment saying that it was handled is also added, assuming that it was a valid
     request.
+
     :param _statusAssignmentScoresDF: The scores for the current each status assignment
     :param _statusAssignmentsDF: The current status assignments
     :param _assignmentCommonName: The assignment name to look up in the special cases file.
     :param _gradescopeDF: the assignment being graded
     :param _specialCasesDF: the special cases for the assignment being graded
     :param latePenalty: an array of floats that contains the score mods for the late penalty
+
     :return: the updated special cases dataframe, the updated gradescope dataframe, and the status assignment scores dataframe
     """
     if not isinstance(_gradescopeDF, pd.DataFrame):

@@ -11,12 +11,16 @@ GRADESCOPE_GRACE_PERIOD = 15
 
 def loadCSV(_filename: str, promptIfError: bool = False, directoriesToCheck: list[str] = None):
     """
+    :Description:
+
     This function validates that a CSV file with the name '_filename' exists
     If it does, it loads it in to a Pandas dataframe to be returned. In the event of an error,
     an empty pandas dataframe is returned
+
     :param directoriesToCheck: See fileHelper.findFile
     :param promptIfError: See fileHelper.findFile
     :param _filename: the csv filename to load
+
     :return: the dataframe from the csv or an empty dataframe if loaded failed
     """
     print(f"Attempting to load {_filename}...")
@@ -35,6 +39,8 @@ def loadCSV(_filename: str, promptIfError: bool = False, directoriesToCheck: lis
 
 def loadGradescope(_filename):
     """
+    :Description:
+
     This function loads the selected gradescope CSV file, drops all unnecessary columns,
     and converts the columns to the format that will be used later.
 
@@ -42,6 +48,7 @@ def loadGradescope(_filename):
     Remaps Email -> (converts to multipass) -> multipass
 
     :param _filename: the filename of the assignment to be graded
+
     :return: the loaded gradescope dataframe
     """
     gradescopeDF = loadCSV(_filename, directoriesToCheck=["./", "./gradescope/"])
@@ -92,10 +99,18 @@ def loadGradescope(_filename):
 
 def loadPageFlagging(_filename, _assignment):
     """
+    :Description:
+
+    **NOT IMPLEMENTED**
+
+    This is currently backlogged: see `#1 <https://github.com/TriHardStudios/101GradingScript/issues/1>`_
+
     This function loads the page flagging file, drops all rows whose assignment column does not correspond to the
     selected assignment
+
     :param _filename:
     :param _assignment:
+
     :return:
     """
     raise NotImplementedError("Page flagging is not yet implemented")

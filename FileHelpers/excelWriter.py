@@ -4,9 +4,12 @@ from styleframe import StyleFrame, Styler, utils
 
 def finalizeSpecialCases(_specialCasesSF: StyleFrame) -> StyleFrame:
     """
+    :Description:
+
     This function updates the coloring for each row - and if the department wants it, locks the correctly handled
     ones.
     :param _specialCasesSF: The dataframe (technically a styleframe) to finalize
+
     :return: the finalized styled dataframe
     """
     if not isinstance(_specialCasesSF, StyleFrame):
@@ -33,9 +36,13 @@ def finalizeSpecialCases(_specialCasesSF: StyleFrame) -> StyleFrame:
 
 def applyStylingForSpecialCases(_specialCasesDF: pd.DataFrame) -> StyleFrame:
     """
+    :Description:
+
     This function converts a dataframe to a style frame and applies the styling for special cases.
     After the initial styling is done, it finalizes the data using the finalizeSpecialCases function
+
     :param _specialCasesDF: the special cases dataframe to be styled.
+
     :return: the styled dataframe in the format of a styleframe.
     """
     # Every cell in the sheet gets this style unless overridden. This library is kinda crap, so I can't apply boarder
@@ -61,10 +68,14 @@ def applyStylingForSpecialCases(_specialCasesDF: pd.DataFrame) -> StyleFrame:
 
 def writeSpecialCases(_filename: str, _specialCasesDF: pd.DataFrame) -> bool:
     """
+    :Description:
+
     This is the specialized function for writing special cases to file. It runs the updates to the dataframe to ready it
     for writing, and calls the helper methods to correctly style it. Calls excelWriter internally actually write
+
     :param _filename: The file name to write. If it doesn't contain the correct file extension (.xlsx) it will be added
     :param _specialCasesDF: The data to write.
+
     :return: True if it was able to write successfully, false if not.
     """
     if _filename is None or _specialCasesDF is None:
@@ -87,10 +98,14 @@ def writeSpecialCases(_filename: str, _specialCasesDF: pd.DataFrame) -> bool:
 
 def excelWriter(_filename: str, _data: (StyleFrame, pd.DataFrame)) -> bool:
     """
+    :Description:
+
     Writes a style frame (a stylized dataframe) to disk (All formatting must be applied) or
     a raw dataframe.
+
     :param _filename: The filename to write. Checks to make sure extension is .xlsx, if it isn't - add it.
     :param _data: the data to write. Must be either a styleframe or a dataframe.
+
     :return: True if write was successful. False if not.
     """
     if _filename is None or _data is None:

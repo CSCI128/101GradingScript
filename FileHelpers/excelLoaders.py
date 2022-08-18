@@ -6,13 +6,19 @@ DEFAULT_SPECIAL_CASES_SEARCH_PATH = "special_cases/special_cases.xlsx"
 
 def loadExcel(_filename, promptIfError: bool = False, directoriesToCheck: list[str] = None):
     """
-    This function validates that an excel file with the name '_filename' exists
+    :Description:
+
+    This function validates that an Excel file with the name `_filename` exists
     If it does, it loads it in to a Pandas dataframe to be returned. In the event of an error,
     an empty pandas dataframe is returned
-    :param directoriesToCheck: fileHelper.findFile
-    :param promptIfError: fileHelper.findFile
-    :param _filename: the excel filename to load
-    :return: the dataframe from the excel file or an empty dataframe if loaded failed
+
+    Calls ``fileHelper.findFile`` internally
+
+    :param directoriesToCheck: ``fileHelper.findFile``
+    :param promptIfError: ``fileHelper.findFile``
+    :param _filename: the Excel filename to load
+
+    :return: the dataframe from the Excel file or an empty dataframe if loaded failed
     """
     print(f"Attempting to load {_filename}...")
 
@@ -30,9 +36,13 @@ def loadExcel(_filename, promptIfError: bool = False, directoriesToCheck: list[s
 
 def loadSpecialCases():
     """
-    This function loads the special cases file, drops all rows whose 'assignment' column does not correspond
-    to the selected assignment.
-    This function attempts to automatically load special cases from "./special_cases/special_cases.xlsx" or
+    :Description:
+
+    This function loads the special cases file.
+
+    This function attempts to automatically load special cases from "./special_cases/special_cases.xlsx" or prompts the
+    user to enter a path if it cant be found
+
     :return: the special cases dataframe
     """
     specialCasesDF = loadExcel(DEFAULT_SPECIAL_CASES_SEARCH_PATH, promptIfError=False, directoriesToCheck=["./"])

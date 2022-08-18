@@ -1,4 +1,7 @@
 """
+Description
+================
+
 This module contains helper functions to post scores to Canvas.
 
 This is the last step in the grading process and **IS** destructive. It will write the new scores to file and post them
@@ -23,8 +26,8 @@ BATCH_SIZE = 50
 def writeUpdatedGradebookToFile(_canvasScores: dict[str, dict[any, any]],
                                 _students: pd.DataFrame, _assignmentsToGrade: pd.DataFrame) -> bool:
     """
-   Description
-    --------
+    :Description:
+
     This function generates a Canvas gradebook from the scores generated, the students pulled from canvas,
     and the all the assignments that have been selected to grade then writes it to file.
     This function generates all the metadata in a *very* specific way for Canvas. Because Mines uses SIS
@@ -46,6 +49,7 @@ def writeUpdatedGradebookToFile(_canvasScores: dict[str, dict[any, any]],
     :param _canvasScores: The generated canvas scores, See ``Grade.score`` for more information
     :param _students: All the students in the pulled from the Canvas roster at the start of execution.
     :param _assignmentsToGrade: The assignments to grade. Must be the same length as ``_canvasScores``
+
     :return: True if the gradebook was successfully generated and written. False if not.
     """
 
@@ -105,24 +109,29 @@ def writeUpdatedGradebookToFile(_canvasScores: dict[str, dict[any, any]],
 def postToCanvas(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]],
                  studentsToPost: (pd.DataFrame, list, None) = None) -> bool:
     """
-   Description
-    --------
+    :Description:
+
     This function generates form data from the Canvas scores to be sent to Canvas to be posted in the Gradebook.
     This function makes use of the Submission Canvas API, which allows us to post grades, comments, and actual
     student work - which may be nice if I decide to expand this project to mirror submissions on gradescope.
 
     Currently, this function generates the form data with student scores and comments in batches of 50 scores then sends
     that data to Canvas.
-    **THIS FUNCTION DOES NOT PUBLISH GRADES FOR STUDENTS** While the Canvas API supports that functionality, the grader
-    should manually verify that the posted scores are what they think they are then manually publish the scores.
+
+    **THIS FUNCTION DOES NOT PUBLISH GRADES FOR STUDENTS**
+
+    While the Canvas API supports that functionality, the grader should manually verify that the posted scores are what
+    they think they are then manually publish the scores.
     (done by clicking the column -> three dot menu -> post grades -> everyone -> post)
 
     Currently, this function only supports passing either a dataframe in for the students to post or a None type,
     which will map to all students.
+
     :param _canvas: The Canvas object.
     :param _canvasScores: The scores to post to Canvas.
     :param studentsToPost: The students to post. If it is None it will post all students.
-    :return:
+
+    :return true if we received all 200 responses from canvas. See ``Canvas.postAssignment``. False if not
     """
 
     if studentsToPost is not None and type(studentsToPost) is not list:
@@ -186,8 +195,8 @@ def postToCanvas(_canvas: Canvas, _canvasScores: dict[str, dict[any, any]],
 
 def writeUpdatedGradesheets(_gradescopeAssignments: dict[int, pd.DataFrame], _assignmentsToGrade: pd.DataFrame) -> bool:
     """
-   Description
-    --------
+    :Description:
+
     Writes the modified gradescope dataframe to file.
     Includes student multipass, student scores, all submission comments, and assignment status
     (either 'Graded' or 'Missing')
@@ -195,8 +204,10 @@ def writeUpdatedGradesheets(_gradescopeAssignments: dict[int, pd.DataFrame], _as
     The file name written is: ``{common_name}_graded.csv``
 
     For example, grades for HW6 would be written as: ``HW6_graded.csv``
+
     :param _gradescopeAssignments: A dict that maps the assignment ids to its corresponding grade sheet.
     :param _assignmentsToGrade: The assignments to grade.
+
     :return: True if *all* gradesheets where written correctly. False if not.
     """
     if not isinstance(_assignmentsToGrade, pd.DataFrame):
@@ -235,11 +246,13 @@ def writeUpdatedGradesheets(_gradescopeAssignments: dict[int, pd.DataFrame], _as
 
 def updateSpecialCases(_specialCasesDF: pd.DataFrame) -> bool:
     """
-   Description
-    --------
+    :Description:
+
     Writes the updated special cases Dataframe to file. See ``FileHelpers.excelWriter.writeSpecialCases`` for more
     information.
+
     :param _specialCasesDF: The special cases dataframe to be written.
+
     :return: True if the special cases were successfully updated. False if not.
     """
     print("Special cases are ready to be updated. Please enter the file name to write")
