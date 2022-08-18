@@ -42,7 +42,6 @@ def standardGrading(_canvas: Canvas):
     print("\n===\tGenerating Canvas Scores\t===\n")
     studentScores = score.createCanvasScoresForAssignments(
         gradescopeGrades,
-        specialCasesDF,
         _canvas,
         assignmentsToGrade
     )
