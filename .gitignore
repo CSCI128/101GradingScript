@@ -6,3 +6,5 @@ venv
 venv/
 .DS_store
 __pycache__
+main.build
+main.dist
