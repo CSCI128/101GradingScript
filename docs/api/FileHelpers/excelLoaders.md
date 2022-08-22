@@ -14,10 +14,13 @@ Calls `fileHelper.findFile` internally
 
 
 * **Parameters**
+
     
     * **directoriesToCheck** (`Optional`[`list`[`str`]]) – `fileHelper.findFile`
 
+
     * **promptIfError** (`bool`) – `fileHelper.findFile`
+
 
     * **_filename** – the Excel filename to load
 

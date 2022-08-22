@@ -11,10 +11,13 @@ This function attempts to automatically locate the file in a few different place
 
 
 * **Parameters**
+
     
     * **directoriesToCheck** (`Optional`[`list`[`str`]]) – The directories to search
 
+
     * **promptIfError** (`bool`) – If we should prompt the user for a file name if we fail to locate the file
+
 
     * **_filename** (`str`) – the file name to search for
 
