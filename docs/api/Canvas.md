@@ -237,8 +237,10 @@ api and validates to check if the posting was successful or not.
 
 
 * **Parameters**
+
     
     * **_assignment** (`str`) – the assigment *ID* to be posted. Must be the ID and *NOT* the name
+
 
     * **_batchedAssignment** (`list`[`str`]) – the list of assignments
 
@@ -289,8 +291,10 @@ scores in a dataframe internally
 
 
 * **Parameters**
+
     
     * **commonName** – 
+
 
     * **canvasID** – 
 
