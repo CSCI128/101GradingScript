@@ -5,12 +5,15 @@ DEFAULT_DIRECTORIES = ["./", "./grades/", "./canvas/", "./gradescope/", "./speci
 
 def findFile(_filename: str, promptIfError: bool = False, directoriesToCheck: list[str] = None):
     """
+    :Description:
+
     This function attempts to automatically locate the file in a few different places:
     ./, ./grades/, ./canvas/, ./gradescope/, ./special_cases/
 
     :param directoriesToCheck: The directories to search
     :param promptIfError: If we should prompt the user for a file name if we fail to locate the file
     :param _filename: the file name to search for
+
     :return: the file name with the found directory prepended
     """
     if directoriesToCheck is None:
