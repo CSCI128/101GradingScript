@@ -25,7 +25,6 @@ extensions = [
     'sphinx_markdown_builder',
     'sphinx.ext.autodoc',
     'sphinx_autodoc_typehints',
-    'myst_parser',
 ]
 source_suffix = [
     '.rst',
@@ -42,8 +41,6 @@ exclude_patterns = [
     'special_cases/*',
 ]
 always_document_param_types = True
-
-
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
