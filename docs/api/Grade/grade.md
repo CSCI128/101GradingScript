@@ -25,18 +25,26 @@ request.
 
 
 * **Parameters**
+
     
     * **_statusAssignmentScoresDF** (`DataFrame`) – The scores for the current each status assignment
 
+
     * **_statusAssignmentsDF** (`DataFrame`) – The current status assignments
+
 
     * **_assignmentCommonName** (`str`) – The assignment name to look up in the special cases file.
 
+
     * **_gradescopeDF** (`DataFrame`) – the assignment being graded
+
 
     * **_specialCasesDF** (`DataFrame`) – the special cases for the assignment being graded
 
+
     * **latePenalty** (`Optional`[`list`[`float`]]) – an array of floats that contains the score mods for the late penalty
+
+
 
 * **Returns**
 
@@ -62,16 +70,21 @@ point earned over the normal amount we would set
 
 
 * **Parameters**
+
     
     * **_gradescopeDF** (`DataFrame`) – the current grades for the current assigment
 
+
     * **_scaleFactor** (`float`) – the scaling to apply to each grade
+
 
     * **assignmentPoints** (`Optional`[`float`]) – the total amount of *regular* *scaled* points the assignment has.
     If not set, function assumes that *no* extra credit scaling is required
 
+
     * **maxScore** (`Optional`[`float`]) – the maximum *total* *scaled* score a student can get. Includes extra credit.
     If not set, function assumes that there is *no* upper score bound
+
 
     * **XCScaleFactor** (`Optional`[`float`]) – the scaling to apply to any points above the ‘assignmentPoints’ var.
     If not set, function assumes that normal scaling (as defined in ‘_scaleFactor’)
@@ -101,13 +114,17 @@ Supports not scoring missing work as well.
 
 
 * **Parameters**
+
     
     * **_gradescopeDF** (`DataFrame`) – The assignment being graded
 
+
     * **score** (`float`) – The score to give students or None if they shouldn’t be scored.
+
 
     * **exceptions** – Any exceptions that exist with the students multipass, and the score they should receive
     Follows the same rules as score - not currently implemented. Might want to expand to include sections
+
 
 
 * **Returns**
@@ -129,14 +146,19 @@ This function will also add a comment to both the special cases sheet and the st
 
 
 * **Parameters**
+
     
     * **_statusAssignmentScoresDF** (`DataFrame`) – The scores for the current each status assignment
 
+
     * **_statusAssignmentsDF** (`DataFrame`) – The current status assignments
+
 
     * **_assignmentCommonName** (`str`) – The assignment name to look up in the special cases file.
 
+
     * **_gradescopeDF** (`DataFrame`) – the assignment being graded
+
 
     * **_specialCasesDF** (`DataFrame`) – the special cases for the assignment being graded
 

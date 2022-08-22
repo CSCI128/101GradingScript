@@ -36,12 +36,16 @@ which will map to all students.
 
 
 * **Parameters**
+
     
     * **_canvas** – The Canvas object.
 
+
     * **_canvasScores** – The scores to post to Canvas.
 
+
     * **studentsToPost** – The students to post. If it is None it will post all students.
+
 
 :return true if we received all 200 responses from canvas. See `Canvas.postAssignment`. False if not
 
@@ -98,12 +102,16 @@ For example: a gradebook generated on Feb 2nd, 2022 for Late Passes and HW6 woul
 
 
 * **Parameters**
+
     
     * **_canvasScores** (`dict`[`str`, `dict`[`any`, `any`]]) – The generated canvas scores, See `Grade.score` for more information
 
+
     * **_students** (`DataFrame`) – All the students in the pulled from the Canvas roster at the start of execution.
 
+
     * **_assignmentsToGrade** (`DataFrame`) – The assignments to grade. Must be the same length as `_canvasScores`
+
 
 
 * **Return type**
@@ -133,8 +141,10 @@ For example, grades for HW6 would be written as: `HW6_graded.csv`
 
 
 * **Parameters**
+
     
     * **_gradescopeAssignments** (`dict`[`int`, `DataFrame`]) – A dict that maps the assignment ids to its corresponding grade sheet.
+
 
     * **_assignmentsToGrade** (`DataFrame`) – The assignments to grade.
 

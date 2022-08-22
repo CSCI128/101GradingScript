@@ -13,9 +13,12 @@ an empty pandas dataframe is returned
 
 * **Parameters**
 
+    
     * **directoriesToCheck** (`Optional`[`list`[`str`]]) – See fileHelper.findFile
 
+
     * **promptIfError** (`bool`) – See fileHelper.findFile
+
 
     * **_filename** (`str`) – the csv filename to load
 
@@ -65,8 +68,10 @@ selected assignment
 
 
 * **Parameters**
+
     
     * **_filename** – 
+
 
     * **_assignment** – 
 
