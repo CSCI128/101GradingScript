@@ -23,7 +23,9 @@ See `score.createCanvasScoresForAssignments` for an example of what this looks l
 
 * **Parameters**
 
+    
     * **_gradescopeDF** (`DataFrame`) – The gradesheet to create scores from
+
 
     * **_students** (`DataFrame`) – the current canvas roaster.
 
@@ -74,12 +76,15 @@ the same as normal assignments.
 
 
 * **Parameters**
+
     
     * **_assignments** (`DataFrame`) – A dataframe containing all the assignments to grade.
 
+
     * **_gradescopeAssignments** (`dict`[`int`, `DataFrame`]) – A dict containing the assignment ids mapped to the grade sheets
 
-    * **_canvas** ([`Canvas`](../Canvas.md#Canvas.Canvas)) – the canvas object.
+
+    * **_canvas** ([`Canvas`](../api/Canvas.md#Canvas.Canvas)) – the canvas object.
 
 
 
@@ -110,11 +115,14 @@ presence of many in the config file.
 
 
 * **Parameters**
+
     
     * **statusAssignmentScoresDF** (`DataFrame`) – The current scores for students for **all** status assignment
 
+
     * **_students** (`DataFrame`) – the list of students. Not *really* needed as we don’t super care about the students name at this
     point and already have their canvas IDs in this grade sheet.
+
 
 
 * **Return type**

@@ -12,7 +12,9 @@ or a list where it will use the built-in csv handling functionality
 
 * **Parameters**
 
+    
     * **_filename** (`str`) – The filename to write. Checks to make sure extension is .csv if it isn’t - add it.
+
 
     * **_data** ((`DataFrame`, `list`)) – the data to write. Must be either a dataframe or list
 

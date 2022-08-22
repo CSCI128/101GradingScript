@@ -38,8 +38,10 @@ a raw dataframe.
 
 
 * **Parameters**
+
     
     * **_filename** (`str`) – The filename to write. Checks to make sure extension is .xlsx, if it isn’t - add it.
+
 
     * **_data** ((`StyleFrame`, `DataFrame`)) – the data to write. Must be either a styleframe or a dataframe.
 
@@ -90,8 +92,10 @@ for writing, and calls the helper methods to correctly style it. Calls excelWrit
 
 
 * **Parameters**
+
     
     * **_filename** (`str`) – The file name to write. If it doesn’t contain the correct file extension (.xlsx) it will be added
+
 
     * **_specialCasesDF** (`DataFrame`) – The data to write.
 
