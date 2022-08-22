@@ -84,7 +84,7 @@ the same as normal assignments.
     * **_gradescopeAssignments** (`dict`[`int`, `DataFrame`]) – A dict containing the assignment ids mapped to the grade sheets
 
 
-    * **_canvas** ([`Canvas`](../Canvas.md#Canvas.Canvas)) – the canvas object.
+    * **_canvas** ([`Canvas`](../api/Canvas.md#Canvas.Canvas)) – the canvas object.
 
 
 
