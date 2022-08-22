@@ -17,7 +17,6 @@ def loadExcel(_filename, promptIfError: bool = False, directoriesToCheck: list[s
     :param directoriesToCheck: ``fileHelper.findFile``
     :param promptIfError: ``fileHelper.findFile``
     :param _filename: the Excel filename to load
-
     :return: the dataframe from the Excel file or an empty dataframe if loaded failed
     """
     print(f"Attempting to load {_filename}...")
