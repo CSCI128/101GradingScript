@@ -24,6 +24,7 @@ markdown: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 	cp -r -v $(SOURCEDIR)/*.md $(BUILDDIR)/markdown/
 	cp -r -v $(SOURCEDIR)/*/*.md $(BUILDDIR)/markdown/**/
+	cp -r -v $(SOURCEDIR)/media $(BUILDDIR)/markdown/
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

@@ -34,8 +34,8 @@ This script will also update all status assignments defined in the config file t
 I'll get into more specific steps in [Getting Started](getting_started.md), but the general steps to start using this 
 program are:
 1. Generate a Canvas API key
-2. Get your user ID from canvas 
-3. Download the compiled program from [here]() for your platform of choice 
+2. Get your user ID and endpoint from canvas
+3. Download the compiled program from [here](https://trihardstudios-my.sharepoint.com/:f:/p/gjbell/Etrkx_32aV1Ntjxta1Uv8U8BcxE4JH3iVwdkpEPJai--zA?e=8GPcyP) for your platform of choice 
 4. Create the required folder structure
 5. Finally, run the script for the first time to create a config file
 
