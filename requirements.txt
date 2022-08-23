@@ -9,7 +9,7 @@ styleframe==4.1
 inflect==6.0.0
 Sphinx==5.1.1
 sphinx-markdown-builder==0.5.5
-myst-parser==0.18.0
+sphinx-autodoc-typehints==1.19.2
 # Maybe use this compiler?? idk
 # Nuitka==1.0.4
 # install for better compile time performance - not sure if im using ordered sets but pandas might be
