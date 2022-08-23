@@ -36,7 +36,7 @@ class Canvas:
         if not self.API_KEY:
             print("api key is invalid")
             return False
-        if not self.USER_ID or not self.USER_ID.isdigit():
+        if not self.USER_ID or not (self.USER_ID.isdigit() or self.USER_ID == "self"):
             print("User ID is invalid")
             return False
         if not self.COURSE_ID or not self.COURSE_ID.isdigit():
