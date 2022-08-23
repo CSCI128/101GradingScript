@@ -1,7 +1,7 @@
 import json
 import os
 from Canvas import Canvas
-
+from sys import exit
 
 # This file needs some work, esp with handling user input.
 
