@@ -255,6 +255,9 @@ def updateSpecialCases(_specialCasesDF: pd.DataFrame) -> bool:
 
     :return: True if the special cases were successfully updated. False if not.
     """
+    # no need to update the special cases
+    if 'ignore' in _specialCasesDF.columns.values.tolist():
+        return True
     print("Special cases are ready to be updated. Please enter the file name to write")
     fileName = str(input("(file_name.xlsx): "))
 

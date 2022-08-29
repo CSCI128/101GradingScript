@@ -374,7 +374,7 @@ class Canvas:
 
         self.m_statusAssignmentsScores['multipass'] = ""
         self.m_statusAssignmentsScores['student_score'] = 0.0
-        self.m_statusAssignmentsScores['status_id'] = 0
+        self.m_statusAssignmentsScores['status_assignment_id'] = 0
 
         for assignment in self.m_statusAssignments['id'].values:
             assignmentName = self.m_statusAssignments.loc[self.m_statusAssignments['id'] == assignment, 'name'].values
@@ -402,12 +402,13 @@ class Canvas:
                     # invalidScoreCounter += 1
                     continue
 
-                self.m_statusAssignmentsScores = pd.concat([self.m_statusAssignmentsScores,
-                               pd.DataFrame({
-                                   'multipass': str(studentMultipass.values[0]),
-                                   'student_score': float(score['score']),
-                                   'status_id': int(assignment)}, index=[0])
-                               ],ignore_index=True)
+                self.m_statusAssignmentsScores = \
+                    pd.concat([self.m_statusAssignmentsScores, pd.DataFrame({
+                                'multipass': str(studentMultipass.values[0]),
+                                'student_score': float(score['score']),
+                                'status_assignment_id': int(assignment)}, index=[0])],
+                              ignore_index=True)
+
             if invalidScoreCounter != 0:
                 print("Warning")
                 print(f"\t\t{invalidScoreCounter} invalid scores were downloaded")
