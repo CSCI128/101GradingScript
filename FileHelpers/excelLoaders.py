@@ -52,6 +52,16 @@ def loadSpecialCases():
         specialCasesDF = loadExcel(usrIn, promptIfError=True)
     if specialCasesDF.empty:
         print("Loading special cases failed")
+        # create all column names so that we dont get errors
+        specialCasesDF['multipass'] = ""
+        specialCasesDF['assignment'] = ""
+        specialCasesDF['extension_type'] = ""
+        specialCasesDF['student_comment'] = ""
+        specialCasesDF['extension_days'] = ""
+        specialCasesDF['approved_by'] = ""
+        specialCasesDF['handled'] = ""
+        specialCasesDF['grader_notes'] = ""
+        specialCasesDF['ignore'] = ""
         return specialCasesDF
 
     # if for some reason excel makes these into bools - convert back to strings
