@@ -1,6 +1,6 @@
 from UI import uiHelpers
 from Canvas import Canvas
-from Grade import grade, score, post
+from Grade import grade, score, post, gradesheets
 import pandas as pd
 
 
@@ -9,30 +9,50 @@ def standardGrading(_canvas: Canvas):
     _canvas.updateStatusAssignmentScores()
     statusAssignmentScores: pd.DataFrame = _canvas.getStatusAssignmentScores()
     uiHelpers.setupAssignments(_canvas)
-    gradescopeGrades: dict[int, pd.DataFrame] = uiHelpers.setupGradescopeGrades(_canvas)
+    gradesheetsToGrade: dict[int, pd.DataFrame] = uiHelpers.setupGradescopeGrades(_canvas)
     specialCasesDF = uiHelpers.setupSpecialCases()
 
     assignmentsToGrade: pd.DataFrame = _canvas.getAssignmentsToGrade()
 
     print("\n===\tGenerating Grades\t===\n")
 
-    for assignmentID, gradesDF in gradescopeGrades.items():
+    for assignmentID, gradesDF in gradesheetsToGrade.items():
         # we know that if we got here that the id will exist and only map to one assignment
         currentAssignment: pd.DataFrame = assignmentsToGrade.loc[assignmentsToGrade['id'] == assignmentID]
         print(f"Now grading {currentAssignment['name'].values[0]}...")
 
         scaleFactor, standardPoints, maxPoints, xcScaleFactor = uiHelpers.setupScaling(
             currentAssignment['points'].values[0])
-        gradescopeGrades[assignmentID] = \
+        gradesheetsToGrade[assignmentID] = \
             grade.scaleScores(gradesDF, scaleFactor, standardPoints, maxPoints, xcScaleFactor)
 
         missingScore, exceptions = uiHelpers.setupMissingAssignments()
-        gradescopeGrades[assignmentID] = \
+        gradesheetsToGrade[assignmentID] = \
             grade.scoreMissingAssignments(gradesDF, score=missingScore, exceptions=exceptions)
 
-        gradescopeGrades[assignmentID], specialCasesDF, statusAssignmentScores = \
+        gradesheetsToGrade[assignmentID], specialCasesDF, statusAssignmentScores = \
             grade.calculateLatePenalty(gradesDF, specialCasesDF, statusAssignments, statusAssignmentScores,
                                        currentAssignment['common_name'].values[0])
+
+    if len(statusAssignments) != 0:
+        print("Updating Status Assignments...", end="")
+
+        for i, row in statusAssignments.iterrows():
+            currentAssignment: pd.DataFrame = \
+                statusAssignmentScores.loc[statusAssignmentScores['status_assignment_id'] == row['id']]
+
+            # if there are no assignments found
+            if len(currentAssignment) == 0:
+                continue
+
+            gradesheetsToGrade[row['id']] = gradesheets.convertStatusAssignmentToGradesheet(currentAssignment)
+
+            # 'activate' the assignments so that they can be graded
+            _canvas.selectAssignmentsToGrade([row['common_name']])
+
+        assignmentsToGrade = _canvas.getAssignmentsToGrade()
+
+        print("Done")
 
     print("\nGrades have been generated. Would you like to continue?")
     usrYN = uiHelpers.getUserInput("y/n")
@@ -41,7 +61,7 @@ def standardGrading(_canvas: Canvas):
 
     print("\n===\tGenerating Canvas Scores\t===\n")
     studentScores = score.createCanvasScoresForAssignments(
-        gradescopeGrades,
+        gradesheetsToGrade,
         _canvas,
         assignmentsToGrade
     )
@@ -52,7 +72,7 @@ def standardGrading(_canvas: Canvas):
         return False
 
     print("\n===\tPosting Scores\t===\n")
-    if post.writeUpdatedGradesheets(gradescopeGrades, assignmentsToGrade) \
+    if post.writeUpdatedGradesheets(gradesheetsToGrade, assignmentsToGrade) \
             and post.updateSpecialCases(specialCasesDF) \
             and post.postToCanvas(_canvas, studentScores):
         return True
