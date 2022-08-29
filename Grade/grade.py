@@ -124,6 +124,9 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
 
     :return: the updated special cases dataframe, the updated gradescope dataframe, and the status assignment scores dataframe
     """
+    # Do not attempt to process anything if there are no special cases
+    if _specialCasesDF.empty:
+        return _gradescopeDF, _specialCasesDF, _statusAssignmentScoresDF
 
     for i, row in _gradescopeDF.iterrows():
         # If either of these are the case, we don't need to update the status assignments
@@ -145,7 +148,7 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
             # Create a bool mask for the current status assignment score for the student and the correct trigger
             currentStatusAssignment = \
                 (_statusAssignmentScoresDF['multipass'] == row['multipass']) & \
-                (_statusAssignmentScoresDF['status_id'] ==
+                (_statusAssignmentScoresDF['status_assignment_id'] ==
                  (_statusAssignmentsDF.loc[_statusAssignmentsDF['trigger'] ==
                                            _specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[0],
                                            'id'].values[0]))
@@ -237,7 +240,7 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         if row['Status'] == "Missing":
             if not _specialCasesDF.empty and len(_specialCasesDF.loc[currentSpecialCase]) != 0:
                 # _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
-                # If the student didn't submit - I'm considering that as handled. 
+                # If the student didn't submit - I'm considering that as handled.
                 _specialCasesDF.loc[currentSpecialCase, 'handled'] = "TRUE"
                 _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = "No Submission"
 
