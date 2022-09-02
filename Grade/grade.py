@@ -128,6 +128,9 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
     if _specialCasesDF.empty:
         return _gradescopeDF, _specialCasesDF, _statusAssignmentScoresDF
 
+    if "trigger" not in _statusAssignmentsDF.columns.to_list() or _statusAssignmentsDF.empty:
+        return _gradescopeDF, _specialCasesDF, _statusAssignmentScoresDF
+
     for i, row in _gradescopeDF.iterrows():
         # If either of these are the case, we don't need to update the status assignments
         if row['Status'] == "Missing" or row['hours_late'] == 0:
