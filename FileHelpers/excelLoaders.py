@@ -2,6 +2,9 @@ import pandas as pd
 import FileHelpers.fileHelper as fileHelper
 
 DEFAULT_SPECIAL_CASES_SEARCH_PATH = "special_cases/special_cases.xlsx"
+SPECIAL_CASES_REQUIRED_COLUMNS = ["handled", "full_name", "assignment", "extension_type",
+                                  "student_comment", "extension_days", "approved_by",
+                                  "handled", "grader_notes"]
 
 
 def loadExcel(_filename, promptIfError: bool = False, directoriesToCheck: list[str] = None):
@@ -33,6 +36,16 @@ def loadExcel(_filename, promptIfError: bool = False, directoriesToCheck: list[s
     return loadedData
 
 
+def createEmptySpecialCasesSheet() -> pd.DataFrame:
+    specialCasesDF: pd.DataFrame = pd.DataFrame()
+    # create all column names so that we dont get errors
+    for col in SPECIAL_CASES_REQUIRED_COLUMNS:
+        specialCasesDF[col] = ""
+    specialCasesDF['ignore'] = ""
+
+    return specialCasesDF
+
+
 def loadSpecialCases():
     """
     :Description:
@@ -52,17 +65,7 @@ def loadSpecialCases():
         specialCasesDF = loadExcel(usrIn, promptIfError=True)
     if specialCasesDF.empty:
         print("Loading special cases failed")
-        # create all column names so that we dont get errors
-        specialCasesDF['multipass'] = ""
-        specialCasesDF['assignment'] = ""
-        specialCasesDF['extension_type'] = ""
-        specialCasesDF['student_comment'] = ""
-        specialCasesDF['extension_days'] = ""
-        specialCasesDF['approved_by'] = ""
-        specialCasesDF['handled'] = ""
-        specialCasesDF['grader_notes'] = ""
-        specialCasesDF['ignore'] = ""
-        return specialCasesDF
+        return createEmptySpecialCasesSheet()
 
     print("Processing special cases...", end='')
     # if for some reason excel makes these into bools - convert back to strings
@@ -75,6 +78,13 @@ def loadSpecialCases():
     # weird edge case with Excel - it parses the spaces in names as unicode \xa0 - which is a pain - changing to a _
     specialCasesDF.columns = specialCasesDF.columns.str.replace('\xa0', '_')
     specialCasesDF.columns = specialCasesDF.columns.str.replace(' ', '_')
+
+    for col in SPECIAL_CASES_REQUIRED_COLUMNS:
+        if col not in specialCasesDF.columns.values.tolist():
+            print("Failed.")
+            print(f"Missing required column: {col}")
+            print("Special cases are being ignored.")
+            return createEmptySpecialCasesSheet()
 
     # We want to non-destructively get the multipass so that it is easier to use the spreadsheet later
     specialCasesDF['multipass'] = ""

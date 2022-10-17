@@ -546,7 +546,7 @@ class Canvas:
 
             for i, assignment in filteredAssignments.iterrows():
                 print(f"{assignment['id']}\t{assignment['name']}\t{assignment['points']}")
-            correctID = str(input("(id: 123456): "))
+            correctID = int(input("(id: 123456): "))
 
             return filteredAssignments.loc[filteredAssignments['id'] == correctID]
 
