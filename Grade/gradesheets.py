@@ -52,7 +52,7 @@ def createGradesheetForPassFailAssignment(_passFailAssignment: pd.DataFrame, _st
         -> pd.DataFrame:
 
     if proofOfAttendanceColumn:
-        proofOfAttendanceColumn = proofOfAttendanceColumn.str.replace(' ', '_')
+        proofOfAttendanceColumn = proofOfAttendanceColumn.replace(' ', '_')
 
     if checkProofOfAttendance and (proofOfAttendanceColumn not in _passFailAssignment.columns.values.tolist()):
         print(f"Unable to find column: {proofOfAttendanceColumn}")
@@ -87,7 +87,8 @@ def createGradesheetForPassFailAssignment(_passFailAssignment: pd.DataFrame, _st
             _passFailAssignment = \
                 pd.concat([_passFailAssignment, pd.DataFrame({
                     'multipass': row['sis_id'],
-                    'student_score': _failPoints
+                    'Total Score': _failPoints,
+                    'lateness_comment': ''
                 }, index=[0])], ignore_index=True)
 
     return _passFailAssignment
