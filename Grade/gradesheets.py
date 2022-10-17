@@ -43,3 +43,55 @@ def convertStatusAssignmentToGradesheet(_statusAssignment: pd.DataFrame) -> pd.D
     gradesheetForStatusAssignment['lateness_comment'] = _statusAssignment['comment'] if commentAvailable else ""
 
     return gradesheetForStatusAssignment
+
+
+def createGradesheetForPassFailAssignment(_passFailAssignment: pd.DataFrame, _students: pd.DataFrame,
+                                          _passPoints: float, _failPoints: float,
+                                          checkProofOfAttendance: bool = False,
+                                          proofOfAttendanceColumn: (str, None) = None) \
+        -> pd.DataFrame:
+
+    if proofOfAttendanceColumn:
+        proofOfAttendanceColumn = proofOfAttendanceColumn.replace(' ', '_')
+
+    if checkProofOfAttendance and (proofOfAttendanceColumn not in _passFailAssignment.columns.values.tolist()):
+        print(f"Unable to find column: {proofOfAttendanceColumn}")
+        checkProofOfAttendance = False
+
+    if not checkProofOfAttendance or not proofOfAttendanceColumn:
+        print("Proof of attendance will not be verified")
+        checkProofOfAttendance = False
+
+    _passFailAssignment['Total Score'] = 0.0
+    _passFailAssignment['lateness_comment'] = ""
+
+    for i, row in _students.iterrows():
+        currentStudent = _passFailAssignment['multipass'] == row['sis_id']
+        # student has an entry - verify proof of attendance if needed
+        if len(_passFailAssignment.loc[currentStudent]) == 1:
+            # simply checking to see if there is *any* data in the proof of attendance column
+            #  might want to expand this in the future
+            if checkProofOfAttendance:
+                if _passFailAssignment.loc[currentStudent, proofOfAttendanceColumn].values[0]:
+                    _passFailAssignment.loc[currentStudent, 'Total Score'] = _passPoints
+
+                else:
+                    _passFailAssignment.loc[currentStudent, 'Total Score'] = _failPoints
+                    _passFailAssignment.loc[currentStudent, 'lateness_comment'] = \
+                        "Unable to verify proof of attendance.\nContact grader if you believe this is a mistake."
+
+            else:
+                _passFailAssignment.loc[currentStudent, 'Total Score'] = _passPoints
+        else:
+            # append a new student to the grade sheet and assign them a failure
+            _passFailAssignment = \
+                pd.concat([_passFailAssignment, pd.DataFrame({
+                    'multipass': row['sis_id'],
+                    'Total Score': _failPoints,
+                    'lateness_comment': ''
+                }, index=[0])], ignore_index=True)
+
+    return _passFailAssignment
+
+
+
