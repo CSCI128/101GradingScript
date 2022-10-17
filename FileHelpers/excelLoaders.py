@@ -48,7 +48,7 @@ def loadSpecialCases():
 
     if specialCasesDF.empty:
         print("Failed to automatically load special cases file. Please enter file name")
-        usrIn = str(input("(./path/to/special_cases.xlxs): "))
+        usrIn = str(input("(./path/to/special_cases.xlsx): "))
         specialCasesDF = loadExcel(usrIn, promptIfError=True)
     if specialCasesDF.empty:
         print("Loading special cases failed")
@@ -64,6 +64,7 @@ def loadSpecialCases():
         specialCasesDF['ignore'] = ""
         return specialCasesDF
 
+    print("Processing special cases...", end='')
     # if for some reason excel makes these into bools - convert back to strings
     for i, row in specialCasesDF.iterrows():
         if row['handled'] == True:
@@ -97,4 +98,53 @@ def loadSpecialCases():
     # fill the NaNs in the grader notes col with empty strings
     specialCasesDF['grader_notes'] = specialCasesDF['grader_notes'].fillna('')
 
+    print("Done.")
     return specialCasesDF
+
+
+def loadPassFailAssignment(_filename, multipassSearches=None) -> pd.DataFrame:
+    if multipassSearches is None:
+        multipassSearches = ["email", "email_address", "multipass", "mines_email", "mines_email_address"]
+
+    passFailAssignmentDF: pd.DataFrame = loadExcel(_filename, promptIfError=False, directoriesToCheck=["./"])
+
+    if passFailAssignmentDF.empty:
+        print(f"Failed to load pass/fail assignment from {_filename}.")
+        usrIn = str(input("(./path/to/assignment.xlsx): "))
+        passFailAssignmentDF = loadExcel(usrIn, promptIfError=True, directoriesToCheck=["./"])
+
+    if passFailAssignmentDF.empty:
+        print("Failed to load pass/fail assignment.")
+        return passFailAssignmentDF
+
+    print("Processing pass/fail assignment...", end='')
+
+    # weird edge case with Excel - it parses the spaces in names as unicode \xa0 - which is a pain - changing to a _
+    passFailAssignmentDF.columns = passFailAssignmentDF.columns.str.replace('\xa0', '_')
+    passFailAssignmentDF.columns = passFailAssignmentDF.columns.str.replace(' ', '_')
+
+    # make all the columns lower to make my life slightly better
+    passFailAssignmentDF.columns = passFailAssignmentDF.columns.str.lower()
+
+    # We need to find the multipass in the spreadsheet, it can either be from an email or from the student entering it
+    #  directly, either way, we need to find it and map to a known value. In this case we are mapping it 'multipass'
+    foundMultipass: bool = False
+    for curSearch in multipassSearches:
+        if curSearch in passFailAssignmentDF.columns.values.tolist():
+            foundMultipass = True
+
+            passFailAssignmentDF.rename(columns={curSearch, 'multipass'}, inplace=True)
+
+            # check to see if the column we found is an email column.
+            if passFailAssignmentDF.at[0, 'multipass'].contains("@"):
+                for i, row in passFailAssignmentDF.iterrows():
+                    passFailAssignmentDF.at[i, 'multipass'] = row['multipass'].split("@")[0]
+
+    if not foundMultipass:
+        print("Failed.")
+        print(f"Failed to identify student multipass in assignment. "
+              f"Found: {passFailAssignmentDF.columns.values.tolist()}")
+        return pd.DataFrame()
+
+    print("Done.")
+    return passFailAssignmentDF
