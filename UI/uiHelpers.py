@@ -2,7 +2,7 @@
 """
 import pandas as pd
 from FileHelpers.csvLoaders import loadGradescope
-from FileHelpers.excelLoaders import loadSpecialCases
+from FileHelpers.excelLoaders import loadSpecialCases, loadPassFailAssignment
 from Canvas import Canvas
 
 
@@ -94,6 +94,25 @@ def setupGradescopeGrades(_canvas: Canvas) -> dict[int, pd.DataFrame]:
     return assignmentMap
 
 
+def setupPassFailAssignments(_canvas: Canvas) -> dict[int, pd.DataFrame]:
+    # the IDs will always be unique per course - using those over the common names
+    selectedAssignments: pd.DataFrame = _canvas.getAssignmentsToGrade()
+    assignmentMap: dict[int, pd.DataFrame] = {}
+    if selectedAssignments is None:
+        return assignmentMap
+    for i, row in selectedAssignments.iterrows():
+        print(f"Enter path to pass/fail assignment for {row['common_name']}")
+        path = getUserInput(allowedUserInput="./path/to/assignment.xlsx")
+        passFailAssignmentDF: pd.DataFrame = loadPassFailAssignment(path)
+        if passFailAssignmentDF.empty:
+            print(f"Failed to load file '{path}'")
+            # TODO handle this case more elegantly
+            return {}
+        assignmentMap[row['id']] = passFailAssignmentDF
+
+    return assignmentMap
+
+
 def setupSpecialCases() -> pd.DataFrame:
     return loadSpecialCases()
 
@@ -138,3 +157,33 @@ def setupMissingAssignments() -> (float or None, None):
         missingScore = float(input("(missing_score): "))
         return missingScore, None
     return missingScore, None
+
+
+def setupProofOfAttendance(_columnNames: list[str]) -> (bool, None or bool, str):
+    print("Should proof of attendance be verified?")
+    usrYN = getUserInput(allowedUserInput="y/n")
+    if usrYN.lower() == 'y':
+        print("Enter name of column where proof of attendance is. Available columns are:")
+        for el in _columnNames:
+            print(el, end=", ")
+        print("\b\n", end='')
+        userIn = ""
+        while userIn not in _columnNames:
+            userIn = str(input("(column_name): "))
+            if userIn not in _columnNames:
+                print(f"Invalid column name: {userIn}")
+        return True, userIn
+
+    return False, None
+
+
+def setupPassFailScores() -> (float, float):
+    print("Enter score for students who passed / completed this assignment")
+
+    passScore = float(input("(passing_score): "))
+
+    print("Enter score for students who failed / did *not* complete this assignment")
+
+    failScore = float(input("(failing_score): "))
+
+    return passScore, failScore
