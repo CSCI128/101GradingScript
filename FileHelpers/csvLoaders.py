@@ -65,9 +65,19 @@ def loadGradescope(_filename):
         if col not in GRADESCOPE_NEVER_DROP:
             gradescopeDF = gradescopeDF.drop(columns=col)
 
-    # Process and apply grace period. Add days counter.
-    for i, row in gradescopeDF.iterrows():
+    print("Processing Gradesheet...", end='')
 
+    if not all(el in GRADESCOPE_NEVER_DROP for el in gradescopeDF.columns.values.tolist()):
+        print("Failed.")
+        print("Unrecognised format for Gradescope gradesheet")
+        return pd.DataFrame()
+
+    ungradedStudents: int = 0
+    # Process and apply grace period. Add days counter. And validate that all students are graded
+    for i, row in gradescopeDF.iterrows():
+        if row['Status'] == "Ungraded":
+            ungradedStudents += 1
+            continue
         # Handles edge case where student has not submitted. Lateness will NaN rather than 0:0:0.
         if type(row['Lateness']) is not str:
             gradescopeDF.at[i, 'Lateness'] = "0"
@@ -84,6 +94,11 @@ def loadGradescope(_filename):
             lateness /= 60  # convert back to hours so we dont have to do the conversion later
             gradescopeDF.at[i, 'Lateness'] = f"{lateness}"
 
+    if ungradedStudents != 0:
+        print("Failed.")
+        print(f"There are currently {ungradedStudents} ungraded students. Grading can not continue.")
+        return pd.DataFrame()
+
     gradescopeDF.rename(columns={'Lateness': 'hours_late'}, inplace=True)
     # All NaN values should be handled at this point
     gradescopeDF = gradescopeDF.astype({'hours_late': "float"}, copy=False)
@@ -94,6 +109,7 @@ def loadGradescope(_filename):
         # this approach doesn't work as great if students aren't in gradescope with their correct emails, but I digress
 
     gradescopeDF.rename(columns={'Email': 'multipass'}, inplace=True)
+    print("Done.")
     return gradescopeDF
 
 
