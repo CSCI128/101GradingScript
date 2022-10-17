@@ -11,3 +11,5 @@ main.dist
 build
 dist
 main.spec
+*.xlsx
+*.csv

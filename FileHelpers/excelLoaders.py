@@ -133,10 +133,10 @@ def loadPassFailAssignment(_filename, multipassSearches=None) -> pd.DataFrame:
         if curSearch in passFailAssignmentDF.columns.values.tolist():
             foundMultipass = True
 
-            passFailAssignmentDF.rename(columns={curSearch, 'multipass'}, inplace=True)
+            passFailAssignmentDF.rename(columns={curSearch: 'multipass'}, inplace=True)
 
             # check to see if the column we found is an email column.
-            if passFailAssignmentDF.at[0, 'multipass'].contains("@"):
+            if '@' in passFailAssignmentDF.at[0, 'multipass']:
                 for i, row in passFailAssignmentDF.iterrows():
                     passFailAssignmentDF.at[i, 'multipass'] = row['multipass'].split("@")[0]
 
@@ -145,6 +145,11 @@ def loadPassFailAssignment(_filename, multipassSearches=None) -> pd.DataFrame:
         print(f"Failed to identify student multipass in assignment. "
               f"Found: {passFailAssignmentDF.columns.values.tolist()}")
         return pd.DataFrame()
+
+    # now we need to fill all the NaNs with spaces, so we correctly evaluate the proof of attendance
+
+    for col in passFailAssignmentDF.columns.values.tolist():
+        passFailAssignmentDF[col] = passFailAssignmentDF[col].fillna('')
 
     print("Done.")
     return passFailAssignmentDF
