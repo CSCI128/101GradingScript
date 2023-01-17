@@ -2,7 +2,7 @@
 name: Bug report
 about: File a bug report
 title: "[BUG] "
-labels: need analysis
+labels: need analysis, bug
 assignees: ''
 
 ---
