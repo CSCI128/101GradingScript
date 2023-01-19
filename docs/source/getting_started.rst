@@ -1,6 +1,8 @@
-# Getting Started
+================
+Getting Started
+================
 
-Setup of the script is designed to be user-friendly. With that said, specific steps must be taken to ensure proper 
+Setup of the script is designed to be user-friendly. With that said, specific steps must be taken to ensure proper
 operation. 
 
 The general process is: 
@@ -204,4 +206,4 @@ execution.
 The program will then write the new config file to disk and load up the course. 
 
 After it downloads the current roaster and updates status assignments, press `3` if you are not going to be grading.
-Otherwise, see [Grading](grading.md) for more information about how the grading process works with this script. 
+Otherwise, see [Grading](grading.rst) for more information about how the grading process works with this script. 

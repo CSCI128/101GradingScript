@@ -1,5 +1,3 @@
-:orphan:
-
 excelLoaders module
 ===================
 

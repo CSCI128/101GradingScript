@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath('../../Grade'))
 
 
 project = 'Grading Script'
-copyright = '2023, TriHard Studios'
+copyright = '2023 TriHard Studios'
 author = 'Gregory Bell'
 release = '1.1.0'
 
@@ -27,7 +27,6 @@ extensions = [
 ]
 source_suffix = [
     '.rst',
-    '.md'
 ]
 
 
@@ -44,5 +43,6 @@ always_document_param_types = True
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'alabaster'
-html_static_path = ['_static']
+# https://sphinx-themes.org/sample-sites/furo/
+html_theme = 'furo'
+html_static_path = []
