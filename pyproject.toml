@@ -1,0 +1,7 @@
+[project]
+name = "Grading_Posting_Script"
+authors = [{name = "TriHardStudios", email="gjbell@trihardstudios.com"}]
+version = "1.1.0"
+
+[tool.setuptools]
+packages = ["Grade", "FileHelpers"]
