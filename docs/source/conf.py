@@ -13,16 +13,15 @@ sys.path.insert(0, os.path.abspath('../../FileHelpers'))
 sys.path.insert(0, os.path.abspath('../../Grade'))
 
 
-project = '101GradingScript'
-copyright = '2022, Gregory Bell'
+project = 'Grading Script'
+copyright = '2023, TriHard Studios'
 author = 'Gregory Bell'
-release = '1.0.0'
+release = '1.1.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 # sphinx-apidoc -o source/ ../<module>
 extensions = [
-    'sphinx_markdown_builder',
     'sphinx.ext.autodoc',
     'sphinx_autodoc_typehints',
 ]
