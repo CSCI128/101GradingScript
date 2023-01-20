@@ -1,9 +1,6 @@
-:orphan:
-
-csvWriter module
+CSV Writers
 ================
 
 .. automodule:: csvWriter
    :members:
    :undoc-members:
-   :show-inheritance:

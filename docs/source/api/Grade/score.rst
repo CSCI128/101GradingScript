@@ -1,9 +1,6 @@
-:orphan:
-
-score module
-============
+Score
+=====
 
 .. automodule:: score
    :members:
    :undoc-members:
-   :show-inheritance:

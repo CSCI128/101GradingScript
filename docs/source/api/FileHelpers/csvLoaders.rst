@@ -1,9 +1,6 @@
-:orphan:
-
-csvLoaders module
+CSV Loader
 =================
 
 .. automodule:: csvLoaders
    :members:
    :undoc-members:
-   :show-inheritance:

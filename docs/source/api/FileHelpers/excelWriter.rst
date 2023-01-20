@@ -1,9 +1,6 @@
-:orphan:
-
-excelWriter module
+Excel Writers
 ==================
 
 .. automodule:: excelWriter
    :members:
    :undoc-members:
-   :show-inheritance:
