@@ -128,9 +128,10 @@ Your file structure (not including the source code) **must** look like this::
 
 
 Initial Setup
----------------------------------------
+-------------
 
-?> I am running the macOS compiled executable 
+.. note::
+    I am running the macOS compiled executable
 
 Ok we are now ready to do our initial setup! 
 
@@ -166,8 +167,9 @@ homepage for the course. It is the numbers after the ``/courses/`` in the url.
 
 .. image:: media/inital_run_2.png
 
-?> There are some table formatting errors, depending on the length of the course names, not all the columns will line up
-it is a fairly minor issue, so it has not yet been fixed.
+.. note::
+    There are some table formatting errors, depending on the length of the course names, not all the columns will line up
+    it is a fairly minor issue, so it has not yet been fixed.
 
 .. image:: media/inital_run_3.png
 

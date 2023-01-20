@@ -8,8 +8,10 @@ Grade Module
    :maxdepth: 2
 
    grade
+   gradesheets
    post
    score
 
+This document is part of the API documentation
 
-These subsystems make up the grade module
+These subsystems make up the grade module.
