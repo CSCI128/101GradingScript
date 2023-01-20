@@ -28,6 +28,7 @@ extensions = [
 source_suffix = [
     '.rst',
 ]
+master_doc = "masterTocTree"
 
 
 templates_path = ['_templates']
