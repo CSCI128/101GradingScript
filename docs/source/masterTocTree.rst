@@ -3,7 +3,6 @@
    :titlesonly:
 
    index
-   architecture
    getting_started
    grading
    common_names

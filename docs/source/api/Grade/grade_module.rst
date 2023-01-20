@@ -7,8 +7,8 @@ Grade Module
 .. toctree::
    :maxdepth: 2
 
-   grade
    gradesheets
+   grade
    post
    score
 

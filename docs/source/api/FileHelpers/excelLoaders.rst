@@ -1,7 +1,6 @@
-excelLoaders module
+Excel Loaders
 ===================
 
 .. automodule:: excelLoaders
    :members:
    :undoc-members:
-   :show-inheritance:

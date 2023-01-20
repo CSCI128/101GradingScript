@@ -1,7 +1,6 @@
-post module
+Post
 ===========
 
 .. automodule:: post
    :members:
    :undoc-members:
-   :show-inheritance:

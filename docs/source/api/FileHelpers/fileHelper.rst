@@ -1,7 +1,6 @@
-fileHelper module
+FileHelper
 =================
 
 .. automodule:: fileHelper
    :members:
    :undoc-members:
-   :show-inheritance:

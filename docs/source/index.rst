@@ -73,4 +73,4 @@ Please create your proposed revision in a feature branch and create a pull reque
 a code reviewer and do not be discouraged if I ask you to make changes. It's all part of the process.
 If you have any questions about the code base or about how to approach an issue, please, please, please ask questions.
 
-I go into more detail on the design and architecture of this program :doc:`architecture`.
+I go into more detail on the design and architecture of this program :doc:`api/architecture`.
