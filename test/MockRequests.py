@@ -52,8 +52,13 @@ def mock_requestsGet(*args, **kwargs) -> MockResponse:
     return MockResponse({'Error': "Failed to resolve mocked GET request."}, 404)
 
 
-def mock_requestsPost(*args, **kwargs):
+def mock_requestsPost(*args, **kwargs) -> MockResponse:
     # POST /api/v1/courses/{course_id}/assignments/{assignment_id}/submissions/update_grades
     # payload = f"grade_data[25685][posted_grade]=6.0&grade_data[25685][text_comment]=Nice Work!&" \
     # f"grade_data[30691][posted_grade]=0.0&grade_data[30691][text_comment]=No Submission&"
-    pass
+
+    if re.match(r"https://(\w+\.?)+\.\w{3}/api/v[0-9]/courses/[0-9]{5}/assignments/[0-9]{6}/submissions/update_grades",
+                args[0]) is not None:
+        return MockResponse({'Status': "Success"}, 200)
+
+    return MockResponse({'Error': "Failed to resolve mocked POST request."}, 404)
