@@ -13,10 +13,10 @@ def generateTruncNorm(mean: float, sd: float, lower: int, upper: int) -> stats.t
 class Factories:
     AssignmentMaxPoints: list[int] = []
     AssignmentMaxStudentPoints: int = None
-    
+
     @staticmethod
     def generateStudentRoster(_numberOfStudents: int, studentEmailDomain: str = "realschool.edu",
-                               studentSISID: str = "1086#####") -> list[dict]:
+                              studentSISID: str = "1086#####") -> list[dict]:
         """
         :Description:
 
@@ -63,7 +63,7 @@ class Factories:
             roster.append(student)
 
         return roster
-    
+
     @staticmethod
     def generateStudentSubmissionsForAssignment(_studentRoster: list[dict], _assignmentID: str) -> list[dict]:
         """
@@ -131,7 +131,8 @@ class Factories:
             assignmentGroup: dict = {}
 
             assignmentGroup['name'] = f"Assignment Group {i + 1}"
-            assignmentGroup['id'] = "".join([str(random.randint(0, 9)) if el == "#" else el for el in canvasAssignmentGroupIDFormat])
+            assignmentGroup['id'] = "".join(
+                [str(random.randint(0, 9)) if el == "#" else el for el in canvasAssignmentGroupIDFormat])
 
             assignmentGroups.append(assignmentGroup)
 
@@ -180,7 +181,8 @@ class Factories:
             validAssignmentNames[selectedName] += 1
             selectedName.replace('#', str(validAssignmentNames[selectedName]))
             assignment['name'] = selectedName
-            assignment['id'] = "".join([str(random.randint(0, 9)) if el == "#" else el for el in canvasAssignmentIDFormat])
+            assignment['id'] = "".join(
+                [str(random.randint(0, 9)) if el == "#" else el for el in canvasAssignmentIDFormat])
             assignment['points_possible'] = Factories.AssignmentMaxPoints[i]
 
             assignments.append(assignment)
@@ -217,7 +219,6 @@ class Factories:
 
         return courses
 
-
     @staticmethod
     def generateStudentGradescopeGradesForAssignment(_studentRoster: list[dict], _assignmentName: str,
                                                      _assignmentPoints: int):
@@ -247,7 +248,8 @@ class Factories:
         studentLate: list[str] = ["Late", "NotLate"]
         studentLateSelProb: list[float] = [.05, .95]
 
-        # On average students get an 75% - 80% with a standard deviation of 12% - 15%. Using a 75% avg and a 15% sd for this
+        # On average students get an 75% - 80% with a standard deviation of 12% - 15%.
+        #  Using a 75% avg and a 15% sd for this
         gradeDist: stats.truncnorm = generateTruncNorm(mean=_assignmentPoints * .75, sd=_assignmentPoints * .15,
                                                        lower=0, upper=_assignmentPoints)
 
