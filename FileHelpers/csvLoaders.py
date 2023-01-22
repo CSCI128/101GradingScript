@@ -4,7 +4,7 @@ from FileHelpers import fileHelper
 # When dropping all the unnecessary rows, drop all but these guys ALWAYS.
 # Exceptions (like for canvas we want to drop all but the assignment we are posting) exist,
 # and are handled in each function
-GRADESCOPE_NEVER_DROP = ['Name', 'Email', 'Total Score', 'Status', 'Lateness']
+GRADESCOPE_NEVER_DROP = ['Email', 'Total Score', 'Status', 'Lateness']
 # Grace Period of 15 minutes
 GRADESCOPE_GRACE_PERIOD = 15
 
@@ -66,8 +66,9 @@ def loadGradescope(_filename):
             gradescopeDF = gradescopeDF.drop(columns=col)
 
     print("Processing Gradesheet...", end='')
+    missingCols: list[str] = [el for el in GRADESCOPE_NEVER_DROP if el not in gradescopeDF.columns.to_list()]
 
-    if not all(el in GRADESCOPE_NEVER_DROP for el in gradescopeDF.columns.values.tolist()):
+    if missingCols:
         print("Failed.")
         print("Unrecognised format for Gradescope gradesheet")
         return pd.DataFrame()
@@ -88,11 +89,14 @@ def loadGradescope(_filename):
         # converting everything to minutes to make this once step easier
         lateness = (float(hours) * 60) + float(minutes) + (float(seconds) / 60)
 
-        if lateness <= GRADESCOPE_GRACE_PERIOD:
-            gradescopeDF.at[i, 'Lateness'] = "0"
-        else:
-            lateness /= 60  # convert back to hours so we dont have to do the conversion later
-            gradescopeDF.at[i, 'Lateness'] = f"{lateness}"
+        # Apply grade period to all submission
+        lateness -= GRADESCOPE_GRACE_PERIOD
+
+        if lateness <= 0:
+            lateness = 0
+
+        lateness /= 60  # convert back to hours, so we don't have to do the conversion later
+        gradescopeDF.at[i, 'Lateness'] = f"{lateness}"
 
     if ungradedStudents != 0:
         print("Failed.")
@@ -113,20 +117,3 @@ def loadGradescope(_filename):
     return gradescopeDF
 
 
-def loadPageFlagging(_filename, _assignment):
-    """
-    :Description:
-
-    **NOT IMPLEMENTED**
-
-    This is currently backlogged: see `#1 <https://github.com/TriHardStudios/101GradingScript/issues/1>`_
-
-    This function loads the page flagging file, drops all rows whose assignment column does not correspond to the
-    selected assignment
-
-    :param _filename:
-    :param _assignment:
-
-    :return:
-    """
-    raise NotImplementedError("Page flagging is not yet implemented")
