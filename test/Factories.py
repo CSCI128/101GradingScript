@@ -1,20 +1,64 @@
 import os
 import numpy.random as numpy_rand
-from scipy.stats import stats
+from scipy import stats
 import random
+import json
+
+
+def generateTruncNorm(mean: float, sd: float, lower: int, upper: int) -> stats.truncnorm:
+    return stats.truncnorm(
+        (lower - mean) / sd, (upper - mean) / sd, loc=mean, scale=sd)
 
 
 class Factories:
     @staticmethod
-    def generateStudentRoaster(_numberOfStudents: int, studentEmailFormat: str = "<username>@realschool.edu",
-                               studentIdFormat: str = "1086#####") -> list[dict]:
+    def generateStudentRoaster(_numberOfStudents: int, studentEmailDomain: str = "realschool.edu",
+                               studentSISID: str = "1086#####") -> list[dict]:
         """
         :Description:
 
-        This function generates a sample roaster for a canvas class.
+        This function generates a sample roaster for a Canvas class.
+        Generates: Full Name, Student Email, Student SIS ID, Canvas ID
 
+        The full names are generated from names.json as retrieved from `dominictarr/random-name <https://github.com/dominictarr/random-name>`_.
+        This file is licensed under MIT.
+
+        :param _numberOfStudents: The number of students to generate.
+        :param studentEmailDomain: The school email for all students.
+        :param studentSISID: The format for the students SIS_ID. The last 5 digits are used as the Canvas ID.
+
+        :returns: The student roaster as a dictionary.
         """
-        pass
+
+        random.seed(12345)
+
+        with open("names.json", 'r') as namesJson:
+            availableNames = json.load(namesJson)
+
+        roaster: list[dict] = []
+
+        for i in range(_numberOfStudents):
+            student: dict = {}
+            studentFirstName: str = ""
+            studentLastName: str = random.choice(availableNames['surnames'])
+
+            # If I get an Adam Adams, I will actually cry
+            if i % 2 == 0:
+                studentFirstName = random.choice(availableNames['female'])
+            else:
+                studentFirstName = random.choice(availableNames['male'])
+
+            sisID: str = "".join([str(random.randint(0, 9)) if el == "#" else el for el in studentSISID])
+            studentEmail: str = studentFirstName[0].lower() + studentLastName.lower() + "@" + studentEmailDomain
+
+            student['name'] = f"{studentFirstName} {studentLastName}"
+            student['email'] = studentEmail
+            student["SIS_SID"] = sisID
+            student["id"] = sisID[-5:]
+
+            roaster.append(student)
+
+        return roaster
 
     @staticmethod
     def generateStudentGradescopeGradesForAssignment(_studentRoaster: list[dict], _assignmentName: str,
@@ -45,41 +89,45 @@ class Factories:
         studentLate: list[str] = ["Late", "NotLate"]
         studentLateSelProb: list[float] = [.05, .95]
 
-        # Seed scipy for reproducibility
-        numpyGenerator = numpy_rand.Generator(numpy_rand.MT19937(12345))
-        stats.truncnorm.random_state = numpyGenerator
+        # On average students get an 75% - 80% with a standard deviation of 12% - 15%. Using a 75% avg and a 15% sd for this
+        gradeDist: stats.truncnorm = generateTruncNorm(mean=_assignmentPoints * .75, sd=_assignmentPoints * .15,
+                                                       lower=0, upper=_assignmentPoints)
 
-        # On average students get an 75% - 80% with a standard deviation of 12% - 15%. Using a 80% avg and a 13% std for this
-        gradeDist: stats.truncnorm = stats.truncnorm(mean=_assignmentPoints * .8, std=_assignmentPoints * .13,
-                                                     low=0, upper=_assignmentPoints)
+        # Seed scipy for reproducibility
+        numpyGenerator = numpy_rand.Generator(numpy_rand.PCG64(12345))
+        gradeDist.random_state = numpyGenerator
 
         gradeSheet: list[str] = []
         for student in _studentRoaster:
             studentStatus: str = random.choices(population=availableStatus, weights=statusSelProb, k=1)[0]
 
             studentLateness: float | None
+            studentScore: float | None
             if studentStatus == "Missing":
                 studentLateness = None
+                studentScore = None
             elif random.choices(population=studentLate, weights=studentLateSelProb, k=1)[0] == "Late":
-                studentLateness = random.uniform(.25, 48.0)
+                studentLateness = random.uniform(.25, 24.25)
+                studentScore = gradeDist.rvs()
             else:
                 studentLateness = 0
+                studentScore = gradeDist.rvs()
 
             gradeSheet.append(
-                Factories.generateSingleStudentGradescopeGrade(student, int(gradeDist.rvs),
+                Factories.generateSingleStudentGradescopeGrade(student, studentScore,
                                                                _assignmentPoints, studentStatus, studentLateness))
 
         Factories.writeOutGradescopeGrades(f"{_assignmentName}_test_scores.csv", gradeSheet)
 
     @staticmethod
-    def generateSingleStudentGradescopeGrade(_studentRoasterEntry: dict, _studentScore: float,
+    def generateSingleStudentGradescopeGrade(_studentRoasterEntry: dict, _studentScore: float | None,
                                              _assignmentPoints: int, _status: str, _lateness: float | None) -> str:
         """
         :Description:
 
         Generates an entry for a Gradescope gradesheet for a single student. These are stored as CSVs
 
-        returns in format ``{First Name},{Last Name},{Student ID},{Student Email},{Student Score},{Max Score},{Lateness}``
+        returns in format ``{First Name},{Last Name},{Student ID},{Student Email},{Student Score},{Max Score},{Status},{Lateness}``
 
         :param _studentRoasterEntry: The student to create an entry for. Should be generated by ``Factories.generateStudentRoaster``
         :param _studentScore: The score the student received on their submission.
@@ -106,19 +154,24 @@ class Factories:
             minutes -= hours * 60
             formattedLateness = f"{hours:02.0f}:{minutes:02.0f}:{seconds:02.0f}"
 
+        formattedScore: str = ""
+        if _studentScore is not None:
+            formattedScore = f"{_studentScore:.0f}"
+
         formattedEntry: str = ""
 
         # add all the information about the student
         # add first name
-        formattedEntry += f"{_studentRoasterEntry['Name'].split(' ')[0]},"
+        formattedEntry += f"{_studentRoasterEntry['name'].split(' ')[0]},"
         # add last name
-        formattedEntry += f"{_studentRoasterEntry['Name'].split(' ')[1]},"
+        formattedEntry += f"{_studentRoasterEntry['name'].split(' ')[1]},"
         formattedEntry += f"{_studentRoasterEntry['SIS_SID']},"
         formattedEntry += f"{_studentRoasterEntry['email']},"
 
         # add submission info
-        formattedEntry += f"{_studentScore:.2f},"
+        formattedEntry += f"{formattedScore},"
         formattedEntry += f"{_assignmentPoints},"
+        formattedEntry += f"{_status},"
         formattedEntry += f"{formattedLateness}"
 
         return formattedEntry
@@ -138,10 +191,12 @@ class Factories:
 
         if not os.path.exists("./gradescope") or not os.path.isdir("./gradescope"):
             os.makedirs("./gradescope")
+            os.makedirs("./gradescope/graded")
 
-        gradesheetWriter = open(f"./gradescope/{_fileName}", "x")
+        pathToFile: str = f"./gradescope/{_fileName}".replace(" ", "_")
+        gradesheetWriter = open(pathToFile, "w+")
 
-        header: str = "First Name,Last Name,SID,Email,Total Score,Status,Lateness (H:M:S)"
+        header: str = "First Name,Last Name,SID,Email,Total Score,Max Points,Status,Lateness (H:M:S)"
         gradesheetWriter.write(f"{header}\n")
 
         for line in _gradeSheet:
@@ -150,3 +205,7 @@ class Factories:
             gradesheetWriter.write(f"{line}\n")
 
         gradesheetWriter.close()
+
+
+students = Factories.generateStudentRoaster(550)
+Factories.generateStudentGradescopeGradesForAssignment(students, "Homework 5", 15)
