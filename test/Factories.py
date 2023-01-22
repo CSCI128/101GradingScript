@@ -11,13 +11,16 @@ def generateTruncNorm(mean: float, sd: float, lower: int, upper: int) -> stats.t
 
 
 class Factories:
+    AssignmentMaxPoints: list[int] = []
+    AssignmentMaxStudentPoints: int = None
+    
     @staticmethod
-    def generateStudentRoaster(_numberOfStudents: int, studentEmailDomain: str = "realschool.edu",
+    def generateStudentRoster(_numberOfStudents: int, studentEmailDomain: str = "realschool.edu",
                                studentSISID: str = "1086#####") -> list[dict]:
         """
         :Description:
 
-        This function generates a sample roaster for a Canvas class.
+        This function generates a sample roster for a Canvas class.
         Generates: Full Name, Student Email, Student SIS ID, Canvas ID
 
         The full names are generated from names.json as retrieved from `dominictarr/random-name <https://github.com/dominictarr/random-name>`_.
@@ -27,7 +30,7 @@ class Factories:
         :param studentEmailDomain: The school email for all students.
         :param studentSISID: The format for the students SIS_ID. The last 5 digits are used as the Canvas ID.
 
-        :returns: The student roaster as a dictionary.
+        :returns: The student roster as a dictionary.
         """
 
         random.seed(12345)
@@ -35,7 +38,7 @@ class Factories:
         with open("names.json", 'r') as namesJson:
             availableNames = json.load(namesJson)
 
-        roaster: list[dict] = []
+        roster: list[dict] = []
 
         for i in range(_numberOfStudents):
             student: dict = {}
@@ -48,32 +51,187 @@ class Factories:
             else:
                 studentFirstName = random.choice(availableNames['male'])
 
-            sisID: str = "".join([str(random.randint(0, 9)) if el == "#" else el for el in studentSISID])
+            sisSID: str = "".join([str(random.randint(0, 9)) if el == "#" else el for el in studentSISID])
             studentEmail: str = studentFirstName[0].lower() + studentLastName.lower() + "@" + studentEmailDomain
 
             student['name'] = f"{studentFirstName} {studentLastName}"
             student['email'] = studentEmail
-            student["SIS_SID"] = sisID
-            student["id"] = sisID[-5:]
+            student["sis_sid"] = sisSID
+            student["sis_id"] = studentEmail.split('@')[0]
+            student["id"] = sisSID[-5:]
 
-            roaster.append(student)
+            roster.append(student)
 
-        return roaster
+        return roster
+    
+    @staticmethod
+    def generateStudentSubmissionsForAssignment(_studentRoster: list[dict], _assignmentID: str) -> list[dict]:
+        """
+        :Description:
+
+        This function generates a canvas submissions with scores assigned to each student
+
+        Relays on ``Factories.AssignmentMaxPoints`` and ``Factories.AssignmentMaxStudentPoints`` for the points that
+        will be assigned to students.
+
+        Grade distribution will be assigned on a normal curve, similar to ``Factories.generateStudentGradescopeGradesForAssignment``
+
+        :param _studentRoster: The student roster generated from ``Factories.generateStudentRoster``.
+        :param _assignmentID: The assignment ID for the assignment being generated.
+
+        :returns: The list of submissions corresponding to all the students in the roster.
+        """
+
+        gradeDist = None
+
+        if Factories.AssignmentMaxStudentPoints is not None:
+            # On average students get an 75% - 80% with a standard deviation of 12% - 15%. Using a 75% avg and a 15% sd for this
+            gradeDist: stats.truncnorm = generateTruncNorm(mean=Factories.AssignmentMaxStudentPoints * .75,
+                                                           sd=Factories.AssignmentMaxStudentPoints * .15,
+                                                           lower=0, upper=Factories.AssignmentMaxStudentPoints)
+
+            numpyGenerator = numpy_rand.Generator(numpy_rand.PCG64(12345))
+            gradeDist.random_state = numpyGenerator
+
+        submissions: list[dict] = []
+
+        for student in _studentRoster:
+            studentSubmission: dict = {}
+
+            studentSubmission['user_id'] = student['id']
+            studentSubmission['assignment_id'] = _assignmentID
+            if gradeDist is None:
+                studentSubmission['score'] = ""
+
+            else:
+                studentSubmission['score'] = f"{gradeDist.rvs():.0f}"
+
+            submissions.append(studentSubmission)
+
+        # Reset to base state
+        Factories.AssignmentMaxStudentPoints = None
+
+        return submissions
 
     @staticmethod
-    def generateStudentGradescopeGradesForAssignment(_studentRoaster: list[dict], _assignmentName: str,
+    def generateAssignmentGroups(_numberOfGroups: int, canvasAssignmentGroupIDFormat: str = "#####") -> list[dict]:
+        """
+        :Description:
+
+        This function generates ``_numberOfGroups`` worth of assignment groups.
+
+        :param _numberOfGroups: The number of groups to generate.
+        :param canvasAssignmentGroupIDFormat: The format for the groups.
+        """
+        random.seed(12345)
+
+        assignmentGroups: list[dict] = []
+
+        for i in range(_numberOfGroups):
+            assignmentGroup: dict = {}
+
+            assignmentGroup['name'] = f"Assignment Group {i + 1}"
+            assignmentGroup['id'] = "".join([str(random.randint(0, 9)) if el == "#" else el for el in canvasAssignmentGroupIDFormat])
+
+            assignmentGroups.append(assignmentGroup)
+
+        return assignmentGroups
+
+    @staticmethod
+    def generateAssignments(_numberOfAssignments: int, canvasAssignmentIDFormat: str = "######") -> list[dict]:
+        """
+        :Description:
+
+        This function generates assignments. Assignments are randomly assigned a name from HW #, Assessment #, and Lab #.
+        IDs are also generated for each assignment.
+
+        Relies on ``Factories.AssignmentMaxPoints`` for assignment points.
+
+        .. warning::
+            Because of the way that assignment IDs are implemented, if this is called more than once, all the assignments
+            will have a duplicate ID. Which is bad. So, during testing, either only use one call of this function
+            (ie one call of ``Canvas.getAssignmentsFromCanvas`` or only one assignment group selected in the config)
+
+        :param _numberOfAssignments: The number of assignments to generate.
+        :param canvasAssignmentIDFormat: The ID format for the generated assignments.
+
+        :returns: The list of generated assignments.
+        """
+
+        if len(Factories.AssignmentMaxPoints) != _numberOfAssignments:
+            raise Exception(f"Invalid number of assignments max points. Must have {_numberOfAssignments}.")
+
+        random.seed(12345)
+
+        validAssignmentNames: dict[str, int] = {
+            "HW #": 0,
+            "Assessment #": 0,
+            "Lab #": 0,
+        }
+
+        validKeys: list = list(validAssignmentNames.keys())
+
+        assignments: list[dict] = []
+
+        for i in range(_numberOfAssignments):
+            assignment: dict = {}
+
+            selectedName: str = random.choice(validKeys)
+            validAssignmentNames[selectedName] += 1
+            selectedName.replace('#', str(validAssignmentNames[selectedName]))
+            assignment['name'] = selectedName
+            assignment['id'] = "".join([str(random.randint(0, 9)) if el == "#" else el for el in canvasAssignmentIDFormat])
+            assignment['points_possible'] = Factories.AssignmentMaxPoints[i]
+
+            assignments.append(assignment)
+
+        Factories.AssignmentMaxPoints = []
+
+        return assignments
+
+    @staticmethod
+    def generateCourses(_numberOfCourses: int, canvasCourseIDFormat: str = "#####") -> list[dict]:
+        """
+        :Description:
+
+        This function generates courses. Courses will have a random ID and will have the teacher enrollment type.
+
+        :param _numberOfCourses: The number of courses to generate.
+        :param canvasCourseIDFormat: The ID format for generated courses.
+
+        :returns: The lists of generated courses.
+        """
+
+        random.seed(1234)
+
+        courses: list[dict] = []
+
+        for i in range(_numberOfCourses):
+            course: dict = {}
+
+            course['course_code'] = f"Course {i + 1}"
+            course['id'] = "".join([str(random.randint(0, 9)) if el == "#" else el for el in canvasCourseIDFormat])
+            course['enrollments'] = [{'type': "teacher"}]
+
+            courses.append(course)
+
+        return courses
+
+
+    @staticmethod
+    def generateStudentGradescopeGradesForAssignment(_studentRoster: list[dict], _assignmentName: str,
                                                      _assignmentPoints: int):
         """
         :Description:
 
-        This function generates a gradescope gradesheet for the student roaster. It will randomly generate scores, missing assignments, and lateness.
+        This function generates a gradescope gradesheet for the student roster. It will randomly generate scores, missing assignments, and lateness.
 
         Calls ``Factories.generateSingleStudentGradescopeGrade`` internally.
         Calls ``Factories.writeOutGradescopeGrades`` internally.
 
         This data will be written out to  ``./gradescope/{_assignmentName}_test_scores.csv``.
 
-        :param _studentRoaster: A student roaster generated by ``Factories.generateStudentRoaster``.
+        :param _studentRoster: A student roster generated by ``Factories.generateStudentRoster``.
         :param _assignmentName: The name of the assignment that grades are being generated for.
         :param _assignmentPoints: The max number of points for this assignment
         """
@@ -98,7 +256,7 @@ class Factories:
         gradeDist.random_state = numpyGenerator
 
         gradeSheet: list[str] = []
-        for student in _studentRoaster:
+        for student in _studentRoster:
             studentStatus: str = random.choices(population=availableStatus, weights=statusSelProb, k=1)[0]
 
             studentLateness: float | None
@@ -120,7 +278,7 @@ class Factories:
         Factories.writeOutGradescopeGrades(f"{_assignmentName}_test_scores.csv", gradeSheet)
 
     @staticmethod
-    def generateSingleStudentGradescopeGrade(_studentRoasterEntry: dict, _studentScore: float | None,
+    def generateSingleStudentGradescopeGrade(_studentRosterEntry: dict, _studentScore: float | None,
                                              _assignmentPoints: int, _status: str, _lateness: float | None) -> str:
         """
         :Description:
@@ -129,7 +287,7 @@ class Factories:
 
         returns in format ``{First Name},{Last Name},{Student ID},{Student Email},{Student Score},{Max Score},{Status},{Lateness}``
 
-        :param _studentRoasterEntry: The student to create an entry for. Should be generated by ``Factories.generateStudentRoaster``
+        :param _studentRosterEntry: The student to create an entry for. Should be generated by ``Factories.generateStudentRoster``
         :param _studentScore: The score the student received on their submission.
         :param _assignmentPoints: The max number of points for this assignment.
         :param _status: The status for the student's submission. Must be ``Graded``, ``Missing``, or ``Ungraded``.
@@ -162,11 +320,11 @@ class Factories:
 
         # add all the information about the student
         # add first name
-        formattedEntry += f"{_studentRoasterEntry['name'].split(' ')[0]},"
+        formattedEntry += f"{_studentRosterEntry['name'].split(' ')[0]},"
         # add last name
-        formattedEntry += f"{_studentRoasterEntry['name'].split(' ')[1]},"
-        formattedEntry += f"{_studentRoasterEntry['SIS_SID']},"
-        formattedEntry += f"{_studentRoasterEntry['email']},"
+        formattedEntry += f"{_studentRosterEntry['name'].split(' ')[1]},"
+        formattedEntry += f"{_studentRosterEntry['sis_sid']},"
+        formattedEntry += f"{_studentRosterEntry['email']},"
 
         # add submission info
         formattedEntry += f"{formattedScore},"
@@ -205,7 +363,3 @@ class Factories:
             gradesheetWriter.write(f"{line}\n")
 
         gradesheetWriter.close()
-
-
-students = Factories.generateStudentRoaster(550)
-Factories.generateStudentGradescopeGradesForAssignment(students, "Homework 5", 15)
