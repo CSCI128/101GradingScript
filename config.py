@@ -26,6 +26,8 @@ def readConfig(_configFileName):
     with open(_configFileName, "r") as jsonDataFile:
         configFile = json.load(jsonDataFile)
 
+        # TODO: pass to calculateLatePenalty
+
     return configFile
 
 
@@ -106,14 +108,16 @@ def createNewConfig():
             statusAssignment = {}
             selectedAssignment = ""
 
-    latePenalties = []
+    latePenalties: list[float] = []
+    latePenalties.insert(0, 1) 
+
     correct = False
     while not correct:
         print("Enter how many days for the late penalty: ")
-        lateDays = uiHelpers.getUserInput(allowedLowerRange=0, 4)
+        lateDays = uiHelpers.getUserInput(allowedLowerRange=1, 7)
 
         for i in range(0, lateDays):
-            print("Enter the max percentage lost per late day: ")
+            print(f"Enter max percentage for {i + 1} days late: ")
             percentage = uiHelpers.getUserInput()
 
             latePenalties.append(percentage)
@@ -123,6 +127,8 @@ def createNewConfig():
         userYN = uiHelpers.getUserInput(allowedUserInput="y/n")
         if userYN.lower() != "y":
             correct = True
+
+    latePenalties.append(0)
 
     input("Press any key to write the config file...")
 
@@ -135,9 +141,9 @@ def createNewConfig():
     output['API_key'] = str(apiKey)
     output['user_id'] = str(userId)
     output['endpoint'] = str(endpoint)
+    output['late_penalties'] = latePenalties
     print("Done.")
     print("\tWriting assignments...", end='')
-    output['late_penalties'] = latePenalties # TODO: call calculateLatePenalty here?
     output['assignments'] = assignments
     output['status_assignments'] = statusAssignments
     print("Done.")
