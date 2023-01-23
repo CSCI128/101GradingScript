@@ -1,4 +1,4 @@
-name: Grading Script
+name: Test Grading Script
 
 on:
   push:
@@ -23,10 +23,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install -r requirements.txt
         python -m pip install --upgrade --upgrade-strategy eager --no-cache-dir .
     - name: Test with unittest
       run: |
-        pushd test > /dev/null
+        cd test
         python -m unittest discover -s . -p "test_*" -v -b 
-        popd > /dev/null
