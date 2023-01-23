@@ -109,7 +109,8 @@ def createNewConfig():
             selectedAssignment = ""
 
     latePenalties: list[float] = []
-    latePenalties.insert(0, 1) 
+    
+    latePenalties.append(0)
 
     correct = False
     while not correct:
