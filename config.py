@@ -3,6 +3,9 @@ import os
 from Canvas import Canvas
 from sys import exit
 
+from UI import uiHelpers
+
+
 # This file needs some work, esp with handling user input.
 
 def locateConfigFiles():
@@ -109,26 +112,25 @@ def createNewConfig():
             selectedAssignment = ""
 
     latePenalties: list[float] = []
-    
-    latePenalties.append(1)
 
     correct = False
     while not correct:
         print("Enter how many days for the late penalty: ")
-        lateDays = uiHelpers.getUserInput(allowedLowerRange=1, 7)
+        lateDays = uiHelpers.getUserInput(allowedLowerRange=1, allowedUpperRange=7)
 
-        for i in range(0, lateDays):
+        for i in range(lateDays):
             print(f"Enter max percentage for {i + 1} days late: ")
-            percentage = uiHelpers.getUserInput()
+            percentage: int = uiHelpers.getUserInput(allowedLowerRange=0, allowedUpperRange=100)
 
-            latePenalties.append(percentage)
+            latePenalties.append(percentage / 100)
 
         print("Is the following information correct?")
         print("Late penalties per day: ", latePenalties)
         userYN = uiHelpers.getUserInput(allowedUserInput="y/n")
-        if userYN.lower() != "y":
+        if userYN.lower() == "y":
             correct = True
 
+    latePenalties.insert(0, 1)
     latePenalties.append(0)
 
     input("Press any key to write the config file...")
@@ -150,7 +152,7 @@ def createNewConfig():
     print("Done.")
     print("\tWriting to file...", end='')
     # TODO Move to a file handler call
-    with open(f"./config/{selectedCourse['name']}-config.json", 'w') as jsonOutput:
+    with open(f"./config/{selectedCourse['name'].replace(' ', '-')}-config.json", 'w') as jsonOutput:
         json.dump(output, jsonOutput)
         print("Done.")
     print("...Done")
@@ -162,7 +164,7 @@ def loadConfig():
     """
     This function gets the list of available config files and prompts the user to create a new file if none exist
     or choose file to open from a list. If only one file exists then it will load that file by default.
-    Returns the loaded config file. (unless one isnt created, in which case it exits the program)
+    Returns the loaded config file. (unless one isn't created, in which case it exits the program)
     """
     configFileCount, configFiles = locateConfigFiles()
     if configFileCount == 1:
