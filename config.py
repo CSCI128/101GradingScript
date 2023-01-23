@@ -106,6 +106,24 @@ def createNewConfig():
             statusAssignment = {}
             selectedAssignment = ""
 
+    latePenalties = []
+    correct = False
+    while not correct:
+        print("Enter how many days for the late penalty: ")
+        lateDays = uiHelpers.getUserInput(allowedLowerRange=0, 4)
+
+        for i in range(0, lateDays):
+            print("Enter the max percentage lost per late day: ")
+            percentage = uiHelpers.getUserInput()
+
+            latePenalties.append(percentage)
+
+        print("Is the following information correct?")
+        print("Late penalties per day: ", latePenalties)
+        userYN = uiHelpers.getUserInput(allowedUserInput="y/n")
+        if userYN.lower() != "y":
+            correct = True
+
     input("Press any key to write the config file...")
 
     output = dict()
@@ -119,6 +137,7 @@ def createNewConfig():
     output['endpoint'] = str(endpoint)
     print("Done.")
     print("\tWriting assignments...", end='')
+    output['late_penalties'] = latePenalties # TODO: call calculateLatePenalty here?
     output['assignments'] = assignments
     output['status_assignments'] = statusAssignments
     print("Done.")
