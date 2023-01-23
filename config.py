@@ -110,7 +110,7 @@ def createNewConfig():
 
     latePenalties: list[float] = []
     
-    latePenalties.append(0)
+    latePenalties.append(1)
 
     correct = False
     while not correct:
