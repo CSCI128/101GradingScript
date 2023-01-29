@@ -29,8 +29,6 @@ def readConfig(_configFileName):
     with open(_configFileName, "r") as jsonDataFile:
         configFile = json.load(jsonDataFile)
 
-        # TODO: pass to calculateLatePenalty
-
     return configFile
 
 
