@@ -2,5 +2,5 @@ from Canvas import Canvas
 from sys import exit
 
 
-def exitGrading(_canvas: Canvas):
+def exitGrading(**kwargs):
     exit(0)

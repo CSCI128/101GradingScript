@@ -5,7 +5,7 @@ from UI.createNewConfig import newConfig
 from UI.passFail import passFail
 
 
-def mainMenu(**kwargs):
+def mainMenu():
     print("Please enter action to take:")
     print("1) Standard Grading")
     print("2) Post Pass Fail Assignment")
