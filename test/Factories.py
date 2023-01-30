@@ -396,13 +396,15 @@ class Factories:
                 "full name": "",
                 "email": "",
                 "assignment": "",
+                "extension type": "",
                 "extension days": 0,
                 "student comment": "",
                 "new due date": "1/1/1989",
                 "approved by": "",
                 "handled": "",
                 "graded notes": "",
-            }
+            },
+            index=[0]
         )
 
         random.seed(1234)
@@ -420,15 +422,17 @@ class Factories:
                         "full name": student['name'],
                         "email": student['email'],
                         "assignment": assignmentCommonName,
+                        "extension type": random.choice(extensionTypes),
                         "extension days": random.randint(1, 4),
                         "student comment": "this is generated data",
                         "approved by": "DEV_OVERRIDE",
                         "handled": None,
                         "graded notes": "",
-                    }
+                    },
+                    index=[0]
                 )
 
-                specialCasesDF = pd.concat([specialCasesDF, newSpecialCase], axis=0, join='outer')
+                specialCasesDF = pd.concat([specialCasesDF, newSpecialCase],  ignore_index=True)
 
         if not os.path.exists("./special_cases") or not os.path.isdir("./special_cases"):
             os.makedirs("./special_cases")
@@ -438,6 +442,8 @@ class Factories:
         excelWriter: pd.ExcelWriter = pd.ExcelWriter(filename)
 
         specialCasesDF.to_excel(excel_writer=excelWriter, merge_cells=True, index=False)
+
+        excelWriter.close()
 
 
 

@@ -10,6 +10,7 @@ import unittest
 from unittest import mock
 
 from FileHelpers.csvLoaders import loadGradescope
+import FileHelpers.excelLoaders as excelLoaders
 from Grade import grade
 
 
@@ -17,13 +18,17 @@ class TestGrade(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        roster = Factories.generateStudentRoster(1)
+        cls.roster = Factories.generateStudentRoster(1)
+        cls.oldSCSearchPath = excelLoaders.DEFAULT_SPECIAL_CASES_SEARCH_PATH
+        excelLoaders.DEFAULT_SPECIAL_CASES_SEARCH_PATH = "./special_cases/SC_test_working.xlsx"
         cls.gradesheetLocation = "gradescope/Homework_1_test_scores.csv"
-        Factories.generateStudentGradescopeGradesForAssignment(roster, "Homework 1", 10)
+        Factories.generateStudentGradescopeGradesForAssignment(cls.roster, "Homework 1", 10)
 
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree("./gradescope")
+        shutil.rmtree("./special_cases", ignore_errors=True)
+        excelLoaders.DEFAULT_SPECIAL_CASES_SEARCH_PATH = cls.oldSCSearchPath
 
     def setUp(self):
         self.assertTrue(os.path.exists(self.gradesheetLocation))
@@ -107,4 +112,52 @@ class TestGrade(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             grade.scoreMissingAssignments(self.gradesheet, exceptions={})
+
+    def test_calculateLatePenaltyNoPenaltyNoSpecialCases(self):
+        """
+        Basic Test - Verify no late penalties, no special cases
+        """
+
+        specialCases: pd.DataFrame = excelLoaders.createEmptySpecialCasesSheet()
+
+        statusAssignments: pd.DataFrame = pd.DataFrame()
+        statusAssignmentsScores: pd.DataFrame = pd.DataFrame()
+
+        self.gradesheet.at[0, 'Total Score'] = 10
+        self.gradesheet.at[0, "hours_late"] = 0
+
+        self.gradesheet, specialCases, statusAssignmentsScores = \
+            grade.calculateLatePenalty(self.gradesheet, specialCases, statusAssignments, statusAssignmentsScores, "H1")
+
+        self.assertTrue(specialCases.empty)
+        self.assertTrue(statusAssignmentsScores.empty)
+
+        self.assertIsInstance(self.gradesheet, pd.DataFrame)
+
+        self.assertEqual(10, self.gradesheet.at[0, 'Total Score'])
+        self.assertEqual("", self.gradesheet.at[0, 'lateness_comment'])
+
+    def test_calculateLatePenaltyNoPenaltySpecialCases(self):
+        """
+        Basic Test - Verify no late penalties with special case
+        """
+
+        Factories.generateSpecialCases(self.roster, ["H1"], extensionTypes=["Late Pass"], specialCaseRatio=1)
+
+        specialCases: pd.DataFrame = excelLoaders.loadSpecialCases()
+
+        statusAssignments: pd.DataFrame = pd.DataFrame()
+        statusAssignmentsScores: pd.DataFrame = pd.DataFrame()
+
+        self.gradesheet.at[0, 'Total Score'] = 10
+        self.gradesheet.at[0, 'hours_late'] = 5
+
+        self.gradesheet, specialCases, statusAssignmentsScores = \
+            grade.calculateLatePenalty(self.gradesheet, specialCases, statusAssignments, statusAssignmentsScores, "H1")
+
+        self.assertIsInstance(self.gradesheet, pd.DataFrame)
+
+        self.assertEqual(8, self.gradesheet.at[0, 'Total Score'])
+        self.assertNotEqual("", self.gradesheet.at[0, 'lateness_comment'])
+
 
