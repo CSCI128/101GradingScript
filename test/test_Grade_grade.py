@@ -157,7 +157,55 @@ class TestGrade(unittest.TestCase):
 
         self.assertIsInstance(self.gradesheet, pd.DataFrame)
 
+        self.assertEqual(10, self.gradesheet.at[0, 'Total Score'])
+        self.assertNotEqual("", self.gradesheet.at[0, 'lateness_comment'])
+
+    def test_calculateLatePenaltySpecialCases(self):
+        """
+        Basic Test - Verify penalty with special case
+        """
+
+        Factories.generateSpecialCases(self.roster, ["H1"], extensionTypes=["Late Pass"], specialCaseRatio=1)
+
+        specialCases: pd.DataFrame = excelLoaders.loadSpecialCases()
+
+        statusAssignments: pd.DataFrame = pd.DataFrame()
+        statusAssignmentsScores: pd.DataFrame = pd.DataFrame()
+
+        self.gradesheet.at[0, 'Total Score'] = 10
+        self.gradesheet.at[0, 'hours_late'] = 25
+
+        self.gradesheet, specialCases, statusAssignmentsScores = \
+            grade.calculateLatePenalty(self.gradesheet, specialCases, statusAssignments, statusAssignmentsScores, "H1")
+
+        self.assertIsInstance(self.gradesheet, pd.DataFrame)
+
         self.assertEqual(8, self.gradesheet.at[0, 'Total Score'])
         self.assertNotEqual("", self.gradesheet.at[0, 'lateness_comment'])
+        self.assertEqual("TRUE", specialCases.at[0, 'handled'])
+
+    def test_calculateLatePenaltyMissingAssignment(self):
+        """
+        Missing Assignment Test - Student requested special case, but did not submit
+        """
+        Factories.generateSpecialCases(self.roster, ["H1"], extensionTypes=["Late Pass"], specialCaseRatio=1)
+
+        specialCases: pd.DataFrame = excelLoaders.loadSpecialCases()
+
+        statusAssignments: pd.DataFrame = pd.DataFrame()
+        statusAssignmentsScores: pd.DataFrame = pd.DataFrame()
+
+        self.gradesheet.at[0, 'Total Score'] = None
+        self.gradesheet.at[0, 'hours_late'] = None
+        self.gradesheet.at[0, 'Status'] = "Missing"
+
+        self.gradesheet, specialCases, statusAssignmentsScores = \
+            grade.calculateLatePenalty(self.gradesheet, specialCases, statusAssignments, statusAssignmentsScores, "H1")
+
+        self.assertIsInstance(self.gradesheet, pd.DataFrame)
+
+        self.assertNotEqual("", self.gradesheet.at[0, 'lateness_comment'])
+        self.assertNotEqual("", specialCases.at[0, 'grader_notes'])
+        self.assertEqual("TRUE", specialCases.at[0, 'handled'])
 
 

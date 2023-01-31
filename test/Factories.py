@@ -391,21 +391,7 @@ class Factories:
         :param specialCaseRatio: the percentage of students that will receive a special case *per* assignment
         """
 
-        specialCasesDF: pd.DataFrame = pd.DataFrame(
-            {
-                "full name": "",
-                "email": "",
-                "assignment": "",
-                "extension type": "",
-                "extension days": 0,
-                "student comment": "",
-                "new due date": "1/1/1989",
-                "approved by": "",
-                "handled": "",
-                "graded notes": "",
-            },
-            index=[0]
-        )
+        specialCasesDF: pd.DataFrame = pd.DataFrame()
 
         random.seed(1234)
 
@@ -426,9 +412,11 @@ class Factories:
                         "extension days": random.randint(1, 4),
                         "student comment": "this is generated data",
                         "approved by": "DEV_OVERRIDE",
+                        "new due date": "1/1/1989",
                         "handled": None,
-                        "graded notes": "",
+                        "grader notes": "",
                     },
+
                     index=[0]
                 )
 
