@@ -16,7 +16,7 @@ def main():
     canvas.getStudentsFromCanvas()
 
     operation = mainMenu()
-    if not operation(canvas=canvas, latepenalty=loadedConfig['latePenalty']):
+    if not operation(canvas=canvas, latepenalty=loadedConfig['late_penalties']):
         print("Grading failed.")
 
 
