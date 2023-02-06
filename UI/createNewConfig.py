@@ -3,7 +3,7 @@ from UI import uiHelpers
 from Canvas import Canvas
 
 
-def newConfig(_canvas: Canvas):
+def newConfig(**kwargs):
     print("Would you like to create a new config file?")
     userYN = uiHelpers.getUserInput(allowedUserInput="y/n")
     if userYN.lower() != "y":

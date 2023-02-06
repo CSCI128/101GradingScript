@@ -6,8 +6,8 @@ from FileHelpers.excelLoaders import loadSpecialCases, loadPassFailAssignment
 from Canvas import Canvas
 
 
-def getUserInput(allowedUserInput: str = None, allowedLowerRanger: int = None, allowedUpperRange: int = None):
-    if allowedLowerRanger is None and allowedUpperRange is None and allowedUserInput is None:
+def getUserInput(allowedUserInput: str = None, allowedLowerRange: int = None, allowedUpperRange: int = None):
+    if allowedLowerRange is None and allowedUpperRange is None and allowedUserInput is None:
         raise AttributeError("No Valid User Input Allowed")
     usrIn: (str, int) = None
     if allowedUserInput is not None:
@@ -19,18 +19,18 @@ def getUserInput(allowedUserInput: str = None, allowedLowerRanger: int = None, a
         finally:
             return usrIn
 
-    if allowedLowerRanger is not None and allowedUpperRange is not None:
-        usrIn = allowedLowerRanger - 1
+    if allowedLowerRange is not None and allowedUpperRange is not None:
+        usrIn = allowedLowerRange - 1
         errorOccurred = False
-        while not (allowedLowerRanger <= usrIn <= allowedUpperRange):
+        while not (allowedLowerRange <= usrIn <= allowedUpperRange):
             try:
-                usrIn = int(input(f"({allowedLowerRanger} - {allowedUpperRange}): "))
+                usrIn = int(input(f"({allowedLowerRange} - {allowedUpperRange}): "))
             except ValueError:
-                usrIn = allowedLowerRanger - 1
+                usrIn = allowedLowerRange - 1
                 errorOccurred = True
                 print("Invalid Input")
             finally:
-                if allowedLowerRanger <= usrIn <= allowedUpperRange:
+                if allowedLowerRange <= usrIn <= allowedUpperRange:
                     return usrIn
                 elif not errorOccurred:
                     print("Invalid Input")

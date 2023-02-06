@@ -11,7 +11,7 @@ def mainMenu():
     print("2) Post Pass Fail Assignment")
     print("3) Create New Config")
     print("4) Exit Grading")
-    choice = getUserInput(allowedLowerRanger=1, allowedUpperRange=4)
+    choice = getUserInput(allowedLowerRange=1, allowedUpperRange=4)
     if choice == 1:
         return standardGrading
     if choice == 2:

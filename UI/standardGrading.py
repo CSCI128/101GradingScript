@@ -4,15 +4,15 @@ from Grade import grade, score, post, gradesheets
 import pandas as pd
 
 
-def standardGrading(_canvas: Canvas):
-    statusAssignments: pd.DataFrame = _canvas.getStatusAssignments()
-    _canvas.updateStatusAssignmentScores()
-    statusAssignmentScores: pd.DataFrame = _canvas.getStatusAssignmentScores()
-    uiHelpers.setupAssignments(_canvas)
-    gradesheetsToGrade: dict[int, pd.DataFrame] = uiHelpers.setupGradescopeGrades(_canvas)
+def standardGrading(**kwargs):
+    statusAssignments: pd.DataFrame = kwargs['canvas'].getStatusAssignments()
+    kwargs['canvas'].updateStatusAssignmentScores()
+    statusAssignmentScores: pd.DataFrame = kwargs['canvas'].getStatusAssignmentScores()
+    uiHelpers.setupAssignments(kwargs['canvas'])
+    gradesheetsToGrade: dict[int, pd.DataFrame] = uiHelpers.setupGradescopeGrades(kwargs['canvas'])
     specialCasesDF = uiHelpers.setupSpecialCases()
 
-    assignmentsToGrade: pd.DataFrame = _canvas.getAssignmentsToGrade()
+    assignmentsToGrade: pd.DataFrame = kwargs['canvas'].getAssignmentsToGrade()
 
     print("\n===\tGenerating Grades\t===\n")
 
@@ -32,7 +32,7 @@ def standardGrading(_canvas: Canvas):
 
         gradesheetsToGrade[assignmentID], specialCasesDF, statusAssignmentScores = \
             grade.calculateLatePenalty(gradesDF, specialCasesDF, statusAssignments, statusAssignmentScores,
-                                       currentAssignment['common_name'].values[0])
+                                       currentAssignment['common_name'].values[0], kwargs['latePenalty'])
 
     if len(statusAssignments) != 0:
         print("Updating Status Assignments...", end="")
@@ -48,9 +48,9 @@ def standardGrading(_canvas: Canvas):
             gradesheetsToGrade[row['id']] = gradesheets.convertStatusAssignmentToGradesheet(currentAssignment)
 
             # 'activate' the assignments so that they can be graded
-            _canvas.selectAssignmentsToGrade([row['common_name']])
+            kwargs['canvas'].selectAssignmentsToGrade([row['common_name']])
 
-        assignmentsToGrade = _canvas.getAssignmentsToGrade()
+        assignmentsToGrade = kwargs['canvas'].getAssignmentsToGrade()
 
         print("Done")
 
@@ -62,7 +62,7 @@ def standardGrading(_canvas: Canvas):
     print("\n===\tGenerating Canvas Scores\t===\n")
     studentScores = score.createCanvasScoresForAssignments(
         gradesheetsToGrade,
-        _canvas,
+        kwargs['canvas'],
         assignmentsToGrade
     )
 
@@ -74,7 +74,7 @@ def standardGrading(_canvas: Canvas):
     print("\n===\tPosting Scores\t===\n")
     if post.writeUpdatedGradesheets(gradesheetsToGrade, assignmentsToGrade) \
             and post.updateSpecialCases(specialCasesDF) \
-            and post.postToCanvas(_canvas, studentScores):
+            and post.postToCanvas(kwargs['canvas'], studentScores):
         return True
 
     return False
