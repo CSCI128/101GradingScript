@@ -32,14 +32,14 @@ def mock_requestsGet(*args, **kwargs) -> MockResponse:
         return MockResponse(Factories.generateAssignments(10), 200)
 
     # /api/v1/courses/:course_id/users for students only
-    if re.match(r"https://(\w+\.?)+\.\w{3}/api/v[0-9]/courses/[0-9]{5}/users/\?.*&&enrollment_type\[]=student",
+    if re.match(r"https://(\w+\.?)+\.\w{3}/api/v[0-9]/courses/[0-9]{5}/users\?.*&&enrollment_type\[]=student",
                 args[0]) is not None:
         return MockResponse(Factories.generateStudentRoster(550), 200)
 
     # /api/v1/courses/:course/assignments/:assignmentid/submissions
     if re.match(r"https://(\w+\.?)+\.\w{3}/api/v[0-9]/courses/[0-9]{5}/assignments/[0-9]{6}/submissions",
                 args[0]) is not None:
-        startingIndex: int = args[0].index("/assignments/") + len("/assignments/") - 1
+        startingIndex: int = args[0].index("/assignments/") + len("/assignments/")
         assignmentID: str = args[0][startingIndex: startingIndex + 6]
 
         return MockResponse(Factories.generateStudentSubmissionsForAssignment(

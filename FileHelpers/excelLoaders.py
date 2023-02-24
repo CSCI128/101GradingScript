@@ -42,6 +42,7 @@ def createEmptySpecialCasesSheet() -> pd.DataFrame:
     for col in SPECIAL_CASES_REQUIRED_COLUMNS:
         specialCasesDF[col] = ""
     specialCasesDF['ignore'] = ""
+    specialCasesDF['multipass'] = ""
 
     return specialCasesDF
 
