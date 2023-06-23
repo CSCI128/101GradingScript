@@ -1,6 +1,6 @@
 import os
 # The directories to check if the user does not set what directories to check
-DEFAULT_DIRECTORIES = ["./", "./grades/", "./canvas/", "./gradescope/", "./special_cases/"]
+DEFAULT_DIRECTORIES = ["./", "./grades/", "./canvas/", "./gradescope/", "./special_cases/", "./runestone/"]
 
 
 def findFile(_filename: str, promptIfError: bool = False, directoriesToCheck: list[str] = None):

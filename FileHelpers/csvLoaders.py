@@ -117,3 +117,48 @@ def loadGradescope(_filename):
     return gradescopeDF
 
 
+def loadRunestone(_filename):
+    """
+    :Description:
+
+    This function loads the selected runestone CSV file, drops all unnecessary columns,
+    and converts the columns to the format that will be used later.
+
+    :param _filename: the filename of the assignment to be graded
+
+    :return: the loaded gradescope dataframe
+    """
+    runestoneDF = loadCSV(_filename, directoriesToCheck=["./", "./runestone/"])
+
+    if runestoneDF.empty:
+        print("Loading Runestone CSV failed.")
+        return runestoneDF
+
+    # drop due date, points, and class average rows (we just want user data)
+    runestoneDF = runestoneDF.drop([0, 1, 2])
+
+    # TODO figure out way to put only week reading in here (match assignment name that was previously loaded)
+    RUNESTONE_NEVER_DROP = ["E-mail", "Week 1 Readings"]
+
+    # drop columns we don't care about 
+    for col in runestoneDF.columns.values.tolist():
+        if col not in RUNESTONE_NEVER_DROP:
+            runestoneDF = runestoneDF.drop(columns=col)
+
+    print("Processing Gradesheet...", end='')
+
+    missingCols: list[str] = [el for el in RUNESTONE_NEVER_DROP if el not in runestoneDF.columns.to_list()]
+
+    if missingCols:
+        print("Failed.")
+        print("Unrecognised format for Runestone gradesheet")
+        return pd.DataFrame()
+
+    # Get multipass from email
+    for i, row in runestoneDF.iterrows():
+        runestoneDF.at[i, 'E-mail'] = row['E-mail'].split('@')[0]
+    runestoneDF.rename(columns={'E-mail': 'multipass'}, inplace=True)
+
+    print("Done.")
+    return runestoneDF
+

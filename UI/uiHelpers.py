@@ -1,7 +1,7 @@
 """
 """
 import pandas as pd
-from FileHelpers.csvLoaders import loadGradescope
+from FileHelpers.csvLoaders import loadGradescope, loadRunestone
 from FileHelpers.excelLoaders import loadSpecialCases, loadPassFailAssignment
 from Canvas import Canvas
 
@@ -90,6 +90,26 @@ def setupGradescopeGrades(_canvas: Canvas) -> dict[int, pd.DataFrame]:
             # TODO handle this case more elegantly
             return {}
         assignmentMap[row['id']] = gradescopeDF
+
+    return assignmentMap
+
+
+# TODO abstract some of this functionality with setupGradescopeGrades, just use a param or something
+def setupRunestoneGrades(_canvas: Canvas) -> dict[int, pd.DataFrame]:
+    # the IDs will always be unique per course - using those over the common names
+    selectedAssignments: pd.DataFrame = _canvas.getAssignmentsToGrade()
+    assignmentMap: dict[int, pd.DataFrame] = {}
+    if selectedAssignments is None:
+        return assignmentMap
+    for i, row in selectedAssignments.iterrows():
+        print(f"Enter path to Runestone grades for {row['common_name']}")
+        path = getUserInput(allowedUserInput="./path/to/runestone/grades.csv")
+        runestoneDF: pd.DataFrame = loadRunestone(path)
+        if runestoneDF.empty:
+            print(f"Failed to load file '{path}'")
+            # TODO handle this case more elegantly
+            return {}
+        assignmentMap[row['id']] = runestoneDF
 
     return assignmentMap
 

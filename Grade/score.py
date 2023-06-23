@@ -27,7 +27,7 @@ def createCanvasScores(_gradescopeDF: pd.DataFrame,
     See ``score.createCanvasScoresForAssignments`` for an example of what this looks like.
 
     :param _gradescopeDF: The gradesheet to create scores from
-    :param _students: the current canvas roaster.
+    :param _students: the current canvas roster.
 
     :return: the dict representation of the assignment scores.
     """
