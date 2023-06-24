@@ -14,6 +14,10 @@ class TestCsvLoaders(unittest.TestCase):
         cls.roster = Factories.generateStudentRoster(10)
         cls.gradesheetLocation = "gradescope/Homework_1_test_scores.csv"
 
+        # TODO probably a better way to accomplish this here, we could separate the test classes
+        # cls.runestoneRoster = Factories.generateStudentRoster(10)
+        cls.runestoneGradesheetLocation = "runestone/Week_1_Readings_test_scores.csv"
+
     def setUp(self):
         Factories.generateStudentGradescopeGradesForAssignment(self.roster, "Homework 1", 10)
         self.assertTrue(os.path.exists(self.gradesheetLocation))
@@ -23,6 +27,11 @@ class TestCsvLoaders(unittest.TestCase):
         self.assertNotIsInstance(csvLoaders.loadCSV, mock.MagicMock)
 
         self.loadCSVSaved = csvLoaders.loadCSV
+
+        # Runestone gen:
+        Factories.generateStudentRunestoneGradesForAssignment(self.roster, "Week 1 Readings", 10)
+        self.assertTrue(os.path.exists(self.runestoneGradesheetLocation))
+        self.assertTrue(os.path.isfile(self.runestoneGradesheetLocation))
 
     def tearDown(self):
         shutil.rmtree("./gradescope")
@@ -142,6 +151,39 @@ class TestCsvLoaders(unittest.TestCase):
         Verify Gradescope Loading Error - File Does Not Exist
         """
         loadedData: pd.DataFrame = csvLoaders.loadGradescope("./gradescope/does_not_exist.csv")
+
+        self.assertIsInstance(loadedData, pd.DataFrame)
+        self.assertTrue(loadedData.empty)
+
+    def test_loadRunestone(self):
+        """
+        Basic Runestone Gradesheet Loading
+        """
+
+        loadedData: pd.DataFrame = csvLoaders.loadRunestone(self.runestoneGradesheetLocation, "Week 1 Readings")
+
+        self.assertIsInstance(loadedData, pd.DataFrame)
+        self.assertFalse(loadedData.empty)
+
+        validCols = ["multipass", "Week 1 Readings"]
+
+        self.assertSequenceEqual(validCols, loadedData.columns.to_list())
+
+        multipasses: list[str] = loadedData['multipass'].to_list()
+        for el in multipasses:
+            self.assertNotIn(el, "@")
+
+        score: list[float] = loadedData['Week 1 Readings'].to_list()
+
+        for el in score:
+            self.assertIsNotNone(el)
+            self.assertIsInstance(el, float)
+
+    def test_loadRunestoneFileNotFound(self):
+        """
+        Verify Runestone Loading Error - File Does Not Exist
+        """
+        loadedData: pd.DataFrame = csvLoaders.loadRunestone("./runestone/does_not_exist.csv", "Week 1 Readings")
 
         self.assertIsInstance(loadedData, pd.DataFrame)
         self.assertTrue(loadedData.empty)

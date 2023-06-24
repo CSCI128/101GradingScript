@@ -94,7 +94,6 @@ def setupGradescopeGrades(_canvas: Canvas) -> dict[int, pd.DataFrame]:
     return assignmentMap
 
 
-# TODO abstract some of this functionality with setupGradescopeGrades, just use a param or something
 def setupRunestoneGrades(_canvas: Canvas) -> dict[int, pd.DataFrame]:
     # the IDs will always be unique per course - using those over the common names
     selectedAssignments: pd.DataFrame = _canvas.getAssignmentsToGrade()
@@ -104,7 +103,7 @@ def setupRunestoneGrades(_canvas: Canvas) -> dict[int, pd.DataFrame]:
     for i, row in selectedAssignments.iterrows():
         print(f"Enter path to Runestone grades for {row['common_name']}")
         path = getUserInput(allowedUserInput="./path/to/runestone/grades.csv")
-        runestoneDF: pd.DataFrame = loadRunestone(path)
+        runestoneDF: pd.DataFrame = loadRunestone(path, row['name'])
         if runestoneDF.empty:
             print(f"Failed to load file '{path}'")
             # TODO handle this case more elegantly

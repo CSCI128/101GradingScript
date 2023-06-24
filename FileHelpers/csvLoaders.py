@@ -117,7 +117,7 @@ def loadGradescope(_filename):
     return gradescopeDF
 
 
-def loadRunestone(_filename):
+def loadRunestone(_filename, assignment: str):
     """
     :Description:
 
@@ -125,7 +125,8 @@ def loadRunestone(_filename):
     and converts the columns to the format that will be used later.
 
     :param _filename: the filename of the assignment to be graded
-
+    :param assignment: the name of the assignment to be graded
+    
     :return: the loaded gradescope dataframe
     """
     runestoneDF = loadCSV(_filename, directoriesToCheck=["./", "./runestone/"])
@@ -137,8 +138,7 @@ def loadRunestone(_filename):
     # drop due date, points, and class average rows (we just want user data)
     runestoneDF = runestoneDF.drop([0, 1, 2])
 
-    # TODO figure out way to put only week reading in here (match assignment name that was previously loaded)
-    RUNESTONE_NEVER_DROP = ["E-mail", "Week 1 Readings"]
+    RUNESTONE_NEVER_DROP = ["E-mail", assignment]
 
     # drop columns we don't care about 
     for col in runestoneDF.columns.values.tolist():
