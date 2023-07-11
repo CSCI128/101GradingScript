@@ -164,18 +164,10 @@ def loadRunestone(_filename, assignment: str):
 
         # derive actual score from total points and score percentage
         score = (totalPoints / 100) * float(row[assignment].split("%")[0])
-
-        print("\n\nSCORE:",score)
-        print("\n\n")
         runestoneDF.at[i, assignment] = score
 
     runestoneDF.rename(columns={'E-mail': 'multipass'}, inplace=True)
-
-    # rename score column to 'Total Score'
     runestoneDF.rename(columns={assignment: 'Total Score'}, inplace=True)
-
-    print("DF AFTER:")
-    print(runestoneDF)
 
     print("Done.")
     return runestoneDF
