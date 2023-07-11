@@ -166,6 +166,10 @@ def loadRunestone(_filename, assignment: str):
         score = (totalPoints / 100) * float(row[assignment].split("%")[0])
         runestoneDF.at[i, assignment] = score
 
+        # add phony columns for gradesheet format
+        runestoneDF.at[i, 'lateness_comment'] = ''
+        runestoneDF.at[i, 'Status'] = ''
+
     runestoneDF.rename(columns={'E-mail': 'multipass'}, inplace=True)
     runestoneDF.rename(columns={assignment: 'Total Score'}, inplace=True)
 
