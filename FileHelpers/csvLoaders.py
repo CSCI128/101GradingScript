@@ -135,6 +135,10 @@ def loadRunestone(_filename, assignment: str):
         print("Loading Runestone CSV failed.")
         return runestoneDF
 
+    # get the points out first; row 1 has the total point value
+    column = runestoneDF.columns.get_loc(assignment)
+    totalPoints = int(runestoneDF.iloc[1][column])
+
     # drop due date, points, and class average rows (we just want user data)
     runestoneDF = runestoneDF.drop([0, 1, 2])
 
@@ -157,7 +161,21 @@ def loadRunestone(_filename, assignment: str):
     # Get multipass from email
     for i, row in runestoneDF.iterrows():
         runestoneDF.at[i, 'E-mail'] = row['E-mail'].split('@')[0]
+
+        # derive actual score from total points and score percentage
+        score = (totalPoints / 100) * float(row[assignment].split("%")[0])
+
+        print("\n\nSCORE:",score)
+        print("\n\n")
+        runestoneDF.at[i, assignment] = score
+
     runestoneDF.rename(columns={'E-mail': 'multipass'}, inplace=True)
+
+    # rename score column to 'Total Score'
+    runestoneDF.rename(columns={assignment: 'Total Score'}, inplace=True)
+
+    print("DF AFTER:")
+    print(runestoneDF)
 
     print("Done.")
     return runestoneDF
