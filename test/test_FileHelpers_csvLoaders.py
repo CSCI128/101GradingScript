@@ -165,7 +165,7 @@ class TestCsvLoaders(unittest.TestCase):
         self.assertIsInstance(loadedData, pd.DataFrame)
         self.assertFalse(loadedData.empty)
 
-        validCols = ["multipass", "Week 1 Readings"]
+        validCols = ["multipass", "Total Score", 'lateness_comment', 'Status']
 
         self.assertSequenceEqual(validCols, loadedData.columns.to_list())
 
@@ -173,7 +173,7 @@ class TestCsvLoaders(unittest.TestCase):
         for el in multipasses:
             self.assertNotIn(el, "@")
 
-        score: list[float] = loadedData['Week 1 Readings'].to_list()
+        score: list[float] = loadedData['Total Score'].to_list()
 
         for el in score:
             self.assertIsNotNone(el)

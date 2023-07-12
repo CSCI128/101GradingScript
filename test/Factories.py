@@ -395,13 +395,15 @@ class Factories:
         # Seed scipy for reproducibility
         numpyGenerator = numpy_rand.Generator(numpy_rand.PCG64(12345))
         gradeDist.random_state = numpyGenerator
-
-        studentScore = gradeDist.rvs()
-
         gradeSheet = []
-        gradeSheet.append("0, 3") # sample scores used in Runestone format
+
+        # three lines that are in the runestone format parser
+        gradeSheet.append("0, 0")
+        gradeSheet.append("0, 3") # total points
+        gradeSheet.append("0, 0")
         for student in _studentRoster:
-            gradeSheet.append(f"{student['email']},{round(studentScore,2)}%")
+            studentScore = gradeDist.rvs()
+            gradeSheet.append(f"{student['email']},{round(studentScore,2) * 10}%")
 
         Factories.writeOutRunestoneGrades(f"{_assignmentName}_test_scores.csv", gradeSheet)
 
