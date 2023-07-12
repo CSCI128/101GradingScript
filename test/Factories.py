@@ -399,6 +399,7 @@ class Factories:
         studentScore = gradeDist.rvs()
 
         gradeSheet = []
+        gradeSheet.append("0, 3") # sample scores used in Runestone format
         for student in _studentRoster:
             gradeSheet.append(f"{student['email']},{round(studentScore,2)}%")
 
