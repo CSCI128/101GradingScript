@@ -400,7 +400,7 @@ class Factories:
 
         gradeSheet = []
         for student in _studentRoster:
-            gradeSheet.append(f"{student['email']}, {studentScore}")
+            gradeSheet.append(f"{student['email']}, {studentScore}%")
 
         Factories.writeOutRunestoneGrades(f"{_assignmentName}_test_scores.csv", gradeSheet)
 
