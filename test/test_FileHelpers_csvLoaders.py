@@ -13,9 +13,6 @@ class TestCsvLoaders(unittest.TestCase):
     def setUpClass(cls):
         cls.roster = Factories.generateStudentRoster(10)
         cls.gradesheetLocation = "gradescope/Homework_1_test_scores.csv"
-
-        # TODO probably a better way to accomplish this here, we could separate the test classes
-        # cls.runestoneRoster = Factories.generateStudentRoster(10)
         cls.runestoneGradesheetLocation = "runestone/Week_1_Readings_test_scores.csv"
 
     def setUp(self):
@@ -178,6 +175,16 @@ class TestCsvLoaders(unittest.TestCase):
         for el in score:
             self.assertIsNotNone(el)
             self.assertIsInstance(el, float)
+
+    def test_loadRunestoneInvaldiGradesheet(self):
+        mockedData: pd.DataFrame = csvLoaders.loadCSV(self.runestoneGradesheetLocation)
+        mockedData.rename(columns={'Email': 'Missing Email'}, inplace=True)
+        csvLoaders.loadCSV = mock.MagicMock(return_value=mockedData)
+
+        loadedData: pd.DataFrame = csvLoaders.loadGradescope(self.runestoneGradesheetLocation)
+
+        self.assertIsInstance(loadedData, pd.DataFrame)
+        self.assertTrue(loadedData.empty)
 
     def test_loadRunestoneFileNotFound(self):
         """
