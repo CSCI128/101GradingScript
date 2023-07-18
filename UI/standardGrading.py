@@ -9,7 +9,20 @@ def standardGrading(**kwargs):
     kwargs['canvas'].updateStatusAssignmentScores()
     statusAssignmentScores: pd.DataFrame = kwargs['canvas'].getStatusAssignmentScores()
     uiHelpers.setupAssignments(kwargs['canvas'])
-    gradesheetsToGrade: dict[int, pd.DataFrame] = uiHelpers.setupGradescopeGrades(kwargs['canvas'])
+
+    # select gradesheet to grade with
+    print("Please enter action to take:")
+    print("1) Gradescope")
+    print("2) Runestone")
+    print("3) PrairieLearn")
+    choice = uiHelpers.getUserInput(allowedLowerRange=1, allowedUpperRange=3)
+    if choice == 1:
+        gradesheetsToGrade: dict[int, pd.DataFrame] = uiHelpers.setupGradescopeGrades(kwargs['canvas'])
+    elif choice == 2:
+        gradesheetsToGrade: dict[int, pd.DataFrame] = uiHelpers.setupRunestoneGrades(kwargs['canvas'])
+    elif choice == 3:
+        return NotImplementedError # TODO add PL support
+
     specialCasesDF = uiHelpers.setupSpecialCases()
 
     assignmentsToGrade: pd.DataFrame = kwargs['canvas'].getAssignmentsToGrade()

@@ -317,7 +317,7 @@ class Canvas:
         # These flags increase the query size to 100 students and filters out all non students
         flags = "per_page=100&&enrollment_type[]=student"
 
-        print("Downloading updated Canvas roaster....")
+        print("Downloading updated Canvas roster....")
         print("\t(This may take a few minutes depending on the enrollment size of the course)")
 
         result = self.__getPaginatedResponse__(url, header, flags=flags)

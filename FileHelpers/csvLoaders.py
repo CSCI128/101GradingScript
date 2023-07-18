@@ -117,3 +117,62 @@ def loadGradescope(_filename):
     return gradescopeDF
 
 
+def loadRunestone(_filename, assignment: str):
+    """
+    :Description:
+
+    This function loads the selected runestone CSV file, drops all unnecessary columns,
+    and converts the columns to the format that will be used later.
+
+    :param _filename: the filename of the assignment to be graded
+    :param assignment: the name of the assignment to be graded
+    
+    :return: the loaded gradescope dataframe
+    """
+    runestoneDF = loadCSV(_filename, directoriesToCheck=["./", "./runestone/"])
+
+    if runestoneDF.empty:
+        print("Loading Runestone CSV failed.")
+        return runestoneDF
+
+    # get the points out first; row 1 has the total point value
+    column = runestoneDF.columns.get_loc(assignment)
+    totalPoints = int(runestoneDF.iloc[1][column])
+
+    # drop due date, points, and class average rows (we just want user data)
+    runestoneDF = runestoneDF.drop([0, 1, 2])
+
+    RUNESTONE_NEVER_DROP = ["E-mail", assignment]
+
+    # drop columns we don't care about 
+    for col in runestoneDF.columns.values.tolist():
+        if col not in RUNESTONE_NEVER_DROP:
+            runestoneDF = runestoneDF.drop(columns=col)
+
+    print("Processing Gradesheet...", end='')
+
+    missingCols: list[str] = [el for el in RUNESTONE_NEVER_DROP if el not in runestoneDF.columns.to_list()]
+
+    if missingCols:
+        print("Failed.")
+        print("Unrecognised format for Runestone gradesheet")
+        return pd.DataFrame()
+
+    # Get multipass from email
+    for i, row in runestoneDF.iterrows():
+        runestoneDF.at[i, 'E-mail'] = row['E-mail'].split('@')[0]
+
+        # derive actual score from total points and score percentage
+        score = (totalPoints / 100) * float(row[assignment].split("%")[0])
+        runestoneDF.at[i, assignment] = score
+
+        # add phony columns for gradesheet format
+        runestoneDF.at[i, 'lateness_comment'] = ''
+        runestoneDF.at[i, 'Status'] = ''
+
+    runestoneDF.rename(columns={'E-mail': 'multipass'}, inplace=True)
+    runestoneDF.rename(columns={assignment: 'Total Score'}, inplace=True)
+
+    print("Done.")
+    return runestoneDF
+

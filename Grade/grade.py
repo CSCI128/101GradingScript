@@ -235,9 +235,10 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
     specialCaseStudents = 0
     latePenaltyStudents = 0
     for i, row in _gradescopeDF.iterrows():
-        # This is just a bool mask - it allows us to filter out the rows that don't meet the criteria
-        currentSpecialCase = (_specialCasesDF['multipass'] == row['multipass']) & \
-                             (_specialCasesDF['assignment'] == _assignmentCommonName)
+        if not _specialCasesDF.empty:
+            # This is just a bool mask - it allows us to filter out the rows that don't meet the criteria
+            currentSpecialCase = (_specialCasesDF['multipass'] == row['multipass']) & \
+                                (_specialCasesDF['assignment'] == _assignmentCommonName)
 
         # Skip over students who didn't submit - they already got a zero
         if row['Status'] == "Missing":
@@ -251,7 +252,11 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
                                                           "\nContact grader if you think this is a mistake."
             continue
 
-        hoursLate = row['hours_late']
+        if 'hours_late' in row.index:
+            hoursLate = row['hours_late']
+        else:
+            hoursLate = 0
+
         # this is safe - if no students are found in the special cases, then it will be empty
         #  and the loop will just not run.
         if not _specialCasesDF.empty and len(_specialCasesDF.loc[currentSpecialCase]) != 0 and hoursLate == 0:

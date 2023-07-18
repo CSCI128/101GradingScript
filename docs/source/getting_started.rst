@@ -211,5 +211,5 @@ execution.
 
 The program will then write the new config file to disk and load up the course. 
 
-After it downloads the current roaster and updates status assignments, press ``3`` if you are not going to be grading.
+After it downloads the current roster and updates status assignments, press ``3`` if you are not going to be grading.
 Otherwise, see :doc:`grading` for more information about how the grading process works with this script.
