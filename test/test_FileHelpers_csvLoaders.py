@@ -32,7 +32,9 @@ class TestCsvLoaders(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree("./gradescope")
+        shutil.rmtree("./runestone")
         self.assertFalse(os.path.exists(self.gradesheetLocation))
+        self.assertFalse(os.path.exists(self.runestoneGradesheetLocation))
 
         # Reset manual mocks
         csvLoaders.loadCSV = self.loadCSVSaved
