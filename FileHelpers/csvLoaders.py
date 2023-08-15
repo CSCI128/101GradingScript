@@ -137,7 +137,6 @@ def loadRunestone(_filename, assignment: str):
 
     # get the points out first; row 1 has the total point value
     column = runestoneDF.columns.get_loc(assignment)
-    totalPoints = int(runestoneDF.iloc[1][column])
 
     # drop due date, points, and class average rows (we just want user data)
     runestoneDF = runestoneDF.drop([0, 1, 2])
@@ -162,8 +161,8 @@ def loadRunestone(_filename, assignment: str):
     for i, row in runestoneDF.iterrows():
         runestoneDF.at[i, 'E-mail'] = row['E-mail'].split('@')[0]
 
-        # derive actual score from total points and score percentage
-        score = (totalPoints / 100) * float(row[assignment].split("%")[0])
+        # derive actual score from total points and score percentage - scale to 4 pts (reading pt amount)
+        score = (float(row[assignment].split("%")[0]) / 100) * 4
         runestoneDF.at[i, assignment] = score
 
         # add phony columns for gradesheet format
