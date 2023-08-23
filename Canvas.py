@@ -337,6 +337,7 @@ class Canvas:
             parsedStudent = dict()
             parsedStudent['name'] = student['name']
             parsedStudent['id'] = student['id']
+            # TODO - UPDATE TO USE CWID!!
             parsedStudent['sis_id'] = student['email'].split('@')[0]
             studentList.append(parsedStudent)
 

@@ -1,9 +1,14 @@
+# The biggest change that needs to be made is to remap mutlipasses to cwids
+
+
 import pandas as pd
 from FileHelpers import fileHelper
 
 # When dropping all the unnecessary rows, drop all but these guys ALWAYS.
 # Exceptions (like for canvas we want to drop all but the assignment we are posting) exist,
 # and are handled in each function
+
+# TODO - Add CWID
 GRADESCOPE_NEVER_DROP = ['Email', 'Total Score', 'Status', 'Lateness']
 # Grace Period of 15 minutes
 GRADESCOPE_GRACE_PERIOD = 15
@@ -159,6 +164,7 @@ def loadRunestone(_filename, assignment: str):
 
     # Get multipass from email
     for i, row in runestoneDF.iterrows():
+        # TODO UPDATE for CWID
         runestoneDF.at[i, 'E-mail'] = row['E-mail'].split('@')[0]
 
         # derive actual score from total points and score percentage - scale to 4 pts (reading pt amount)
