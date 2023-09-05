@@ -2,7 +2,7 @@ import pandas as pd
 import FileHelpers.fileHelper as fileHelper
 
 DEFAULT_SPECIAL_CASES_SEARCH_PATH = "special_cases/special_cases.xlsx"
-SPECIAL_CASES_REQUIRED_COLUMNS = ["handled", "full_name", "assignment", "extension_type",
+SPECIAL_CASES_REQUIRED_COLUMNS = ["handled", "name", "assignment", "extension_type",
                                   "student_comment", "extension_days", "approved_by",
                                   "handled", "grader_notes"]
 

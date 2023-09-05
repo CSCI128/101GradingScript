@@ -327,7 +327,7 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
         #  != because this is a bool mask - not a normal boolean expression
         for student in _specialCasesDF.loc[(_specialCasesDF['handled'] != "TRUE")
                                            & (_specialCasesDF['assignment'] == _assignmentCommonName),
-                                           'full_name'].values.tolist():
+                                           'name'].values.tolist():
             print(f"\t\t...{student} was unable to be handled automatically")
         print("\tCheck grader notes for more details")
         print("\tIf student special case was not updated, they were not found in gradescope")
