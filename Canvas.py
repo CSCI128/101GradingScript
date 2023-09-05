@@ -325,9 +325,6 @@ class Canvas:
         print(f"\tDownloaded {len(result)} students")
 
         studentList: list[dict] = []
-        # So when the registrar adds students to a class, we don't have their CWID or multipass
-        #  Naturally, this isn't documented anywhere so through trial and error I found the fields that will always
-        #  be included when we pull the students.
         print("\tProcessing students...", end='')
         invalidStudents: int = 0
         for student in result:
@@ -337,8 +334,10 @@ class Canvas:
             parsedStudent = dict()
             parsedStudent['name'] = student['name']
             parsedStudent['id'] = student['id']
-            # TODO - UPDATE TO USE CWID!!
-            parsedStudent['sis_id'] = student['email'].split('@')[0]
+            # Despite this sis_id - it actually is the CWID.
+            # Thanks mines for phasing out multipass
+            parsedStudent['sis_id'] = student['sis_user_id']
+            # parsedStudent['sis_id'] = student['email'].split('@')[0]
             studentList.append(parsedStudent)
 
         if invalidStudents != 0:

@@ -8,8 +8,7 @@ from FileHelpers import fileHelper
 # Exceptions (like for canvas we want to drop all but the assignment we are posting) exist,
 # and are handled in each function
 
-# TODO - Add CWID
-GRADESCOPE_NEVER_DROP = ['Email', 'Total Score', 'Status', 'Lateness']
+GRADESCOPE_NEVER_DROP = ['SID', 'Total Score', 'Status', 'Lateness']
 # Grace Period of 15 minutes
 GRADESCOPE_GRACE_PERIOD = 15
 
@@ -112,12 +111,7 @@ def loadGradescope(_filename):
     # All NaN values should be handled at this point
     gradescopeDF = gradescopeDF.astype({'hours_late': "float"}, copy=False)
 
-    # Get multipass from email
-    for i, row in gradescopeDF.iterrows():
-        gradescopeDF.at[i, 'Email'] = row['Email'].split('@')[0]
-        # this approach doesn't work as great if students aren't in gradescope with their correct emails, but I digress
-
-    gradescopeDF.rename(columns={'Email': 'multipass'}, inplace=True)
+    gradescopeDF.rename(columns={'SID': 'multipass'}, inplace=True)
     print("Done.")
     return gradescopeDF
 
