@@ -91,7 +91,7 @@ def loadSpecialCases():
 
     # Get multipass from email
     for i, row in specialCasesDF.iterrows():
-        specialCasesDF.at[i, 'multipass'] = row['email'].split("@")[0]
+        specialCasesDF.at[i, 'multipass'] = row['CWID']
 
     # Set the date to be a date
     specialCasesDF['new_due_date'] = pd.to_datetime(specialCasesDF['new_due_date'])
