@@ -59,6 +59,8 @@ def loadSpecialCases():
     """
     specialCasesDF = loadExcel(DEFAULT_SPECIAL_CASES_SEARCH_PATH, promptIfError=False, directoriesToCheck=["./"])
 
+    specialCasesDF = specialCasesDF.astype({"CWID": str})
+
     if specialCasesDF.empty:
         print("Failed to automatically load special cases file. Please enter file name")
         usrIn = str(input("(./path/to/special_cases.xlsx): "))
