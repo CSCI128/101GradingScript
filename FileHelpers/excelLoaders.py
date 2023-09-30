@@ -96,7 +96,7 @@ def loadSpecialCases():
         specialCasesDF.at[i, 'multipass'] = row['CWID']
 
     # Set the date to be a date
-    specialCasesDF['new_due_date'] = pd.to_datetime(specialCasesDF['new_due_date'])
+#    specialCasesDF['new_due_date'] = pd.to_datetime(specialCasesDF['new_due_date'])
 
     # set the extension days to be an int
     specialCasesDF['extension_days'] = specialCasesDF['extension_days'].apply(pd.to_numeric)

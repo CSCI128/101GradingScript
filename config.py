@@ -45,6 +45,10 @@ def createNewConfig():
     endpoint = str(input("Enter your Canvas endpoint: "))
     canvas = Canvas(_API_KEY=apiKey, _USER_ID=userId, _ENDPOINT=endpoint)
 
+    
+    tenantId = str(intput("Enter your Azure AD Tenant Id: "))
+    
+    
     print("Retrieving eligible courses...", end="\n\t")
     courses = canvas.getCourseList()
     print("...Done")
@@ -139,9 +143,10 @@ def createNewConfig():
     print("\tWriting course metadate...", end='')
     output['class'] = str(selectedCourse['name'])
     output['course_id'] = str(selectedCourse['id'])
-    output['API_key'] = str(apiKey)
-    output['user_id'] = str(userId)
-    output['endpoint'] = str(endpoint)
+    output['API_key'] = apiKey
+    output['user_id'] = userId
+    output['endpoint'] = endpoint
+    output['tenant_id'] = tenantId
     output['late_penalties'] = latePenalties
     print("Done.")
     print("\tWriting assignments...", end='')
