@@ -13,6 +13,32 @@ in order to be scored and posted with everything else.
 """
 import pandas as pd
 
+from Bartik.Bartik import Bartik
+from AzureAD import AzureAD
+
+async def convertBartikToGradesheet(_azure: AzureAD, _bartik: Bartik, _students: pd.DataFrame, _assignment: str) -> pd.DataFrame:
+    bartikGradesheet: pd.DataFrame = pd.DataFrame()
+    bartikGradesheet['multipass'] = ""
+    bartikGradesheet['Total Score'] = ""
+    bartikGradesheet['lateness_comment'] = ""
+
+    _bartik.openSession()
+
+    for _, row in _students.iterrows():
+        studentEmail: str = await _azure.getEmailFromCWID(row['sis_id'])
+        score: float = _bartik.getScoreForAssignment(studentEmail, _assignment)
+
+        bartikGradesheet = bartikGradesheet.concat([bartikGradesheet, pd.DataFrame(
+                {
+                    'multipass': row['sis_id'],
+                    'Total Score': score,
+                    'lateness_comment': "",
+                }, index=[0]
+            )], ignore_index=True)
+        
+
+    return bartikGradesheet
+
 
 def convertStatusAssignmentToGradesheet(_statusAssignment: pd.DataFrame) -> pd.DataFrame:
     """

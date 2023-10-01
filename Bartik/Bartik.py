@@ -11,7 +11,7 @@ from Bartik.Base import Base
 
 class Bartik():
 
-    def __init__(self, _url: str, _userName: str, _password: str) -> None:
+    def __init__(self, _url: str, _userName: str, _password: str, courseId: Optional[int] = None) -> None:
         CONNECTION_STRING: str = f"postgresql+psycopg://{_userName}:{_password}@{_url}/autograder"
 
         self.engine: Engine = create_engine(CONNECTION_STRING)
@@ -19,6 +19,8 @@ class Bartik():
         self.BoundSession = sessionmaker(bind=self.engine)
 
         self.session: Optional[Session] = None
+
+        self.COURSE_ID = courseId
 
         Base.metadata.create_all(self.engine)
    
@@ -49,11 +51,11 @@ class Bartik():
 
 
 
-    def getScoreForAssignment(self, _email: str, _assessment: str, _courseId: int, requiredProblems: int = 3) -> float:
+    def getScoreForAssignment(self, _email: str, _assessment: str, requiredProblems: int = 3, maxScore: float = 10) -> float:
         if self.session is None:
             raise Exception("Session must be started")
 
-        assessmentIdStm = select(Assignments).where(Assignments.name.like(f"%{_assessment}%"), Assignments.course_id == _courseId)
+        assessmentIdStm = select(Assignments).where(Assignments.name.like(f"%{_assessment}%"), Assignments.course_id == self.COURSE_ID)
         assessmentIdAssessment = self.session.scalars(assessmentIdStm).first()
 
         if assessmentIdAssessment is None:
@@ -88,8 +90,10 @@ class Bartik():
 
         for grade in grades:
             totalScore += grade.score // 10 if grade is not None else 0
+        
+        totalScore = (totalScore / requiredProblems) * 10
 
-        return totalScore / requiredProblems
+        return totalScore if totalScore <= maxScore else maxScore
         
         
 

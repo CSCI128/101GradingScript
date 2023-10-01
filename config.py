@@ -1,6 +1,7 @@
 import json
 import os
 from Canvas import Canvas
+from Bartik.Bartik import Bartik
 from sys import exit
 
 from UI import uiHelpers
@@ -46,8 +47,19 @@ def createNewConfig():
     canvas = Canvas(_API_KEY=apiKey, _USER_ID=userId, _ENDPOINT=endpoint)
 
     
-    tenantId = str(intput("Enter your Azure AD Tenant Id: "))
+    tenantId = str(input("Enter your Azure AD Tenant Id: "))
+    bartikUrl = str(input("Enter bartik url"))
+    bartikUserName = str(input("Enter bartik username"))
+    bartikPassword = str(input("Enter bartik password"))
     
+    bartik = Bartik(bartikUrl, bartikUserName, bartikPassword)
+
+    bartikCourseNumber = str(input("Enter course number"))
+    bartik.openSession()
+
+    bartikCourse = bartik.getCourseId(bartikCourseNumber)
+
+    bartik.closeSession()
     
     print("Retrieving eligible courses...", end="\n\t")
     courses = canvas.getCourseList()
@@ -148,6 +160,12 @@ def createNewConfig():
     output['endpoint'] = endpoint
     output['tenant_id'] = tenantId
     output['late_penalties'] = latePenalties
+    output['tenant_id'] = tenantId
+    output['bartik_url'] = bartikUrl
+    output['bartik_username'] = bartikUserName
+    # security is my passion
+    output['bartik_password'] = bartikPassword
+    output['bartik_course'] = bartikCourse
     print("Done.")
     print("\tWriting assignments...", end='')
     output['assignments'] = assignments

@@ -26,8 +26,9 @@ def main():
 
     if "bartik_url" in loadedConfig.keys() \
         and "bartik_username" in loadedConfig.keys() \
-        and "bartik_password" in loadedConfig.keys():
-        bartik = Bartik(loadedConfig["bartik_url"], loadedConfig["bartik_username"], loadedConfig["bartik_password"])
+        and "bartik_password" in loadedConfig.keys() \
+        and "bartik_course" in loadedConfig.keys():
+        bartik = Bartik(loadedConfig["bartik_url"], loadedConfig["bartik_username"], loadedConfig["bartik_password"], loadedConfig['bartik_course'])
 
     operation = mainMenu()
     if not operation(canvas=canvas, azure=azure, bartik=bartik, latePenalty=loadedConfig['late_penalties']):
