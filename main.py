@@ -24,10 +24,10 @@ def main():
     if "tenant_id" in loadedConfig.keys():
         azure = AzureAD(loadedConfig["tenant_id"])
 
-    if "bartik_uri" in loadedConfig.keys() \
+    if "bartik_url" in loadedConfig.keys() \
         and "bartik_username" in loadedConfig.keys() \
         and "bartik_password" in loadedConfig.keys():
-        bartik = Bartik(loadedConfig["bartik_uri"], loadedConfig["bartik_username"], loadedConfig["bartik_password"])
+        bartik = Bartik(loadedConfig["bartik_url"], loadedConfig["bartik_username"], loadedConfig["bartik_password"])
 
     operation = mainMenu()
     if not operation(canvas=canvas, azure=azure, bartik=bartik, latePenalty=loadedConfig['late_penalties']):
