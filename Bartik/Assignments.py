@@ -1,20 +1,20 @@
-from typing import Optional
+from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime
-from Base import Base
+from Bartik.Base import Base
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
 class Assignments(Base):
     __tablename__ = "assignments"
 
-    id: Mapped[BigInteger] = mapped_column(primary_key=True, index=True)
-    name: Optional[Mapped[str]]
-    created_at: Mapped[DateTime]
-    updated_at: Mapped[DateTime]
-    due_date: Mapped[DateTime]
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    # Technically this is nullable, but there are no instances in the DB where it is null
+    name: Mapped[str]
+    created_at: Mapped[datetime]
+    updated_at: Mapped[datetime]
+    due_date: Mapped[datetime]
     hidden: Mapped[bool] = mapped_column(default=False)
-    description: Optional[Mapped[str]]
-    course_id: Optional[Mapped[int]] = mapped_column(index=True)
+    description: Mapped[str]
+    course_id: Mapped[int] = mapped_column(index=True)
 
     
