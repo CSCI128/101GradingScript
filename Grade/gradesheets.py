@@ -16,7 +16,7 @@ import pandas as pd
 from Bartik.Bartik import Bartik
 from AzureAD import AzureAD
 
-async def convertBartikToGradesheet(_azure: AzureAD, _bartik: Bartik, _students: pd.DataFrame, _assignment: str) -> pd.DataFrame:
+async def convertBartikToGradesheet(_azure: AzureAD, _bartik: Bartik, _students: pd.DataFrame, _assignment: str, _maxPoints: float, _requiredProbems: int) -> pd.DataFrame:
     bartikGradesheet: pd.DataFrame = pd.DataFrame()
     bartikGradesheet['multipass'] = ""
     bartikGradesheet['Total Score'] = ""
@@ -40,7 +40,7 @@ async def convertBartikToGradesheet(_azure: AzureAD, _bartik: Bartik, _students:
         score: float = 0
 
         try:
-            score = _bartik.getScoreForAssignment(studentEmail, _assignment)
+            score = _bartik.getScoreForAssignment(studentEmail, _assignment, _requiredProbems, _maxPoints)
         except Exception:
             missing = True
             print(f"Missing")

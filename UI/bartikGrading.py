@@ -14,8 +14,9 @@ async def bartikGrading(canvas, azure, bartik, **kwargs) -> bool:
     for i, row in assignmentsToGrade.iterrows():
         print("=" * 4, f"Now grading {row['name']}", "=" * 4)
         studioNumber: str = uiHelpers.getUserInput("studio number")
+        requiredProblems: int = int(uiHelpers.getUserInput("required problems"))
 
-        bartikAssignmentsToGrade[row['id']] = await gradesheets.convertBartikToGradesheet(azure, bartik, canvas.getStudents(), studioNumber)
+        bartikAssignmentsToGrade[row['id']] = await gradesheets.convertBartikToGradesheet(azure, bartik, canvas.getStudents(), studioNumber, row['points'], requiredProblems)
 
 
     print("\nGrades have been generated. Would you like to continue?")

@@ -87,9 +87,13 @@ class Bartik():
         totalScore: float = 0
 
         for grade in grades:
-            totalScore += grade.score // 10 if grade is not None else 0
+            totalScore += grade.score if grade is not None else 0
         
-        totalScore = (totalScore / requiredProblems) * 10
+        # bartik reports scores out of 10 per problem, scale down so they are now out of 1
+        
+        totalScore /= 10
+
+        totalScore = round((totalScore / requiredProblems) * maxScore, 2)
 
         return totalScore if totalScore <= maxScore else maxScore
         
