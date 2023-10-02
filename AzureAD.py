@@ -47,9 +47,7 @@ class AzureAD():
     async def getEmailFromCWID(self, cwid: str) -> str:
         query = UsersRequestBuilder.UsersRequestBuilderGetQueryParameters(
                 select=["userPrincipalName"],
-                # AAAAAA I THOUGHT I FINALLY ESCAPED ODATA
-                # No idea why i have to do it like this???
-                filter=f"employeeId eq '{cwid}'",
+                filter=f"employeeId eq '{cwid}' and accountEnabled eq true",
             )
 
         requestConfig = UsersRequestBuilder.UsersRequestBuilderGetRequestConfiguration(query_parameters=query)
