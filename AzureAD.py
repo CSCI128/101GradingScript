@@ -55,9 +55,16 @@ class AzureAD():
         requestConfig = UsersRequestBuilder.UsersRequestBuilderGetRequestConfiguration(query_parameters=query)
 
         user = await self.client.users.get(requestConfig)
+
+        if user is None:
+            return ""
+
+        if user.value is None or not len(user.value):
+            return ""
+
         user = user.value[0]
 
-        if user is None or user.user_principal_name is None:
+        if user.user_principal_name is None:
           return ""
 
         return user.user_principal_name

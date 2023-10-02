@@ -12,7 +12,8 @@ def bartikGrading(canvas, azure, bartik, **kwargs) -> bool:
     bartikAssignmentsToGrade: dict[int, pd.DataFrame] = {}
     assignmentsToGrade = canvas.getAssignmentsToGrade()
     
-    for _, row in assignmentsToGrade:
+    for i, row in assignmentsToGrade.iterrows():
+        print("=" * 4, f"Now grading {row['name']}", "=" * 4)
         studioNumber: str = uiHelpers.getUserInput("studio number")
 
         bartikAssignmentsToGrade[row['id']] = asyncio.run(gradesheets.convertBartikToGradesheet(azure, bartik, canvas.getStudents(), studioNumber))
@@ -26,7 +27,7 @@ def bartikGrading(canvas, azure, bartik, **kwargs) -> bool:
     print("\n===\tGenerating Canvas Scores\t===\n")
     studentScores = score.createCanvasScoresForAssignments(
         bartikAssignmentsToGrade,
-        kwargs['canvas'],
+        canvas,
         assignmentsToGrade
     )
 
@@ -37,7 +38,7 @@ def bartikGrading(canvas, azure, bartik, **kwargs) -> bool:
 
     print("\n===\tPosting Scores\t===\n")
     if post.writeUpdatedGradesheets(bartikAssignmentsToGrade, assignmentsToGrade) \
-            and post.postToCanvas(kwargs['canvas'], studentScores):
+            and post.postToCanvas(canvas, studentScores):
         return True
 
     return False

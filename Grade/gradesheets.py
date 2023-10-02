@@ -24,17 +24,34 @@ async def convertBartikToGradesheet(_azure: AzureAD, _bartik: Bartik, _students:
 
     _bartik.openSession()
 
+    counter = 0
     for _, row in _students.iterrows():
-        studentEmail: str = await _azure.getEmailFromCWID(row['sis_id'])
-        score: float = _bartik.getScoreForAssignment(studentEmail, _assignment)
+        counter += 1
+        print(f"Now grading {row['name']} ({counter}/{len(_students)})...", end="")
 
-        bartikGradesheet = bartikGradesheet.concat([bartikGradesheet, pd.DataFrame(
+        studentEmail: str = await _azure.getEmailFromCWID(row['sis_id'])
+        
+        if studentEmail == "":
+            print(f"Failed to map email for {row['name']}")
+            continue
+
+
+        score: float = 0
+
+        try:
+            score = _bartik.getScoreForAssignment(studentEmail, _assignment)
+        except Exception:
+            print(f"Missing")
+
+        bartikGradesheet = pd.concat([bartikGradesheet, pd.DataFrame(
                 {
                     'multipass': row['sis_id'],
                     'Total Score': score,
                     'lateness_comment': "",
                 }, index=[0]
             )], ignore_index=True)
+
+        print("Done")
         
 
     return bartikGradesheet

@@ -72,13 +72,11 @@ class Bartik():
 
         problemIds: List[int] = [problemId.problem_id for problemId in problemsIdProblems if problemId is not None]
 
-        print(problemIds)
-
         userIdStm = select(Users).where(Users.email == _email)
         userIdUser = self.session.scalars(userIdStm).first()
         
         if userIdUser is None:
-            raise Exception("Failed to find user")
+            raise Exception(f"Failed to find user with email {_email}")
 
         userId = userIdUser.id
 
