@@ -4,7 +4,7 @@ from Grade import grade, score, post, gradesheets
 import pandas as pd
 
 
-def standardGrading(**kwargs):
+async def standardGrading(**kwargs):
     statusAssignments: pd.DataFrame = kwargs['canvas'].getStatusAssignments()
     kwargs['canvas'].updateStatusAssignmentScores()
     statusAssignmentScores: pd.DataFrame = kwargs['canvas'].getStatusAssignmentScores()

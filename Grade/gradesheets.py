@@ -36,11 +36,13 @@ async def convertBartikToGradesheet(_azure: AzureAD, _bartik: Bartik, _students:
             continue
 
 
+        missing: bool = False
         score: float = 0
 
         try:
             score = _bartik.getScoreForAssignment(studentEmail, _assignment)
         except Exception:
+            missing = True
             print(f"Missing")
 
         bartikGradesheet = pd.concat([bartikGradesheet, pd.DataFrame(
@@ -51,9 +53,11 @@ async def convertBartikToGradesheet(_azure: AzureAD, _bartik: Bartik, _students:
                 }, index=[0]
             )], ignore_index=True)
 
-        print("Done")
+        if not missing:
+            print("Done")
         
 
+    _bartik.closeSession()
     return bartikGradesheet
 
 

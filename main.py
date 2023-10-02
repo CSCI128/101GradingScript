@@ -6,8 +6,9 @@ from Bartik.Bartik import Bartik
 from Canvas import Canvas
 import config
 from UI.ui import mainMenu
+import asyncio
 
-def main():
+async def main():
     # TODO May want to rework this config loading!
     loadedConfig = config.loadConfig()
     # TODO Should this be moved to after the action is taken?
@@ -31,7 +32,7 @@ def main():
         bartik = Bartik(loadedConfig["bartik_url"], loadedConfig["bartik_username"], loadedConfig["bartik_password"], loadedConfig['bartik_course'])
 
     operation = mainMenu()
-    if not operation(canvas=canvas, azure=azure, bartik=bartik, latePenalty=loadedConfig['late_penalties']):
+    if not await operation(canvas=canvas, azure=azure, bartik=bartik, latePenalty=loadedConfig['late_penalties']):
         print("Grading failed.")
 
 
@@ -42,4 +43,4 @@ if __name__ == "__main__":
 
     if getattr(sys, 'frozen', False):
         os.chdir(os.path.dirname(sys.executable))
-    main()
+    asyncio.run(main())

@@ -2,11 +2,10 @@ from typing import Optional
 from UI import uiHelpers
 from Canvas import Canvas 
 from Grade import gradesheets, score, post
-import asyncio
 import pandas as pd
 
 
-def bartikGrading(canvas, azure, bartik, **kwargs) -> bool:
+async def bartikGrading(canvas, azure, bartik, **kwargs) -> bool:
     uiHelpers.setupAssignments(canvas)
 
     bartikAssignmentsToGrade: dict[int, pd.DataFrame] = {}
@@ -16,7 +15,7 @@ def bartikGrading(canvas, azure, bartik, **kwargs) -> bool:
         print("=" * 4, f"Now grading {row['name']}", "=" * 4)
         studioNumber: str = uiHelpers.getUserInput("studio number")
 
-        bartikAssignmentsToGrade[row['id']] = asyncio.run(gradesheets.convertBartikToGradesheet(azure, bartik, canvas.getStudents(), studioNumber))
+        bartikAssignmentsToGrade[row['id']] = await gradesheets.convertBartikToGradesheet(azure, bartik, canvas.getStudents(), studioNumber)
 
 
     print("\nGrades have been generated. Would you like to continue?")
