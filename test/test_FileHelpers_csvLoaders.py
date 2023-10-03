@@ -84,7 +84,7 @@ class TestCsvLoaders(unittest.TestCase):
 
         multipasses: list[str] = loadedData['multipass'].to_list()
         for el in multipasses:
-            self.assertNotIn(el, "@")
+            self.assertRegex(str(el), r"^\d+$")
 
         lateness: list[float] = loadedData['hours_late'].to_list()
 
