@@ -137,7 +137,7 @@ class TestCsvLoaders(unittest.TestCase):
         Verify Invalid Gradesheet - Misnamed Columns
         """
         mockedData: pd.DataFrame = csvLoaders.loadCSV(self.gradesheetLocation)
-        mockedData.rename(columns={'Email': 'Missing Email'}, inplace=True)
+        mockedData.rename(columns={'SID': 'Ignore me'}, inplace=True)
         csvLoaders.loadCSV = mock.MagicMock(return_value=mockedData)
 
         loadedData: pd.DataFrame = csvLoaders.loadGradescope(self.gradesheetLocation)
