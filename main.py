@@ -1,10 +1,14 @@
 import os
 import sys
+from typing import Optional
+from AzureAD import AzureAD
+from Bartik.Bartik import Bartik
 from Canvas import Canvas
 import config
 from UI.ui import mainMenu
+import asyncio
 
-def main():
+async def main():
     # TODO May want to rework this config loading!
     loadedConfig = config.loadConfig()
     # TODO Should this be moved to after the action is taken?
@@ -15,8 +19,20 @@ def main():
     canvas.getAssignmentsFromConfig(loadedConfig)
     canvas.getStudentsFromCanvas()
 
+    azure: Optional[AzureAD] = None
+    bartik: Optional[Bartik] = None
+
+    if "tenant_id" in loadedConfig.keys():
+        azure = AzureAD(loadedConfig["tenant_id"])
+
+    if "bartik_url" in loadedConfig.keys() \
+        and "bartik_username" in loadedConfig.keys() \
+        and "bartik_password" in loadedConfig.keys() \
+        and "bartik_course" in loadedConfig.keys():
+        bartik = Bartik(loadedConfig["bartik_url"], loadedConfig["bartik_username"], loadedConfig["bartik_password"], loadedConfig['bartik_course'])
+
     operation = mainMenu()
-    if not operation(canvas=canvas, latePenalty=loadedConfig['late_penalties']):
+    if not await operation(canvas=canvas, azure=azure, bartik=bartik, latePenalty=loadedConfig['late_penalties']):
         print("Grading failed.")
 
 
@@ -26,6 +42,5 @@ if __name__ == "__main__":
     #  directory to be where the app is downloaded.
 
     if getattr(sys, 'frozen', False):
-        # print(os.path.dirname(sys.executable))
         os.chdir(os.path.dirname(sys.executable))
-    main()
+    asyncio.run(main())

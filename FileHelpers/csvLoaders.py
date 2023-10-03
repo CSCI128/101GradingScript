@@ -1,10 +1,14 @@
+# The biggest change that needs to be made is to remap mutlipasses to cwids
+
+
 import pandas as pd
 from FileHelpers import fileHelper
 
 # When dropping all the unnecessary rows, drop all but these guys ALWAYS.
 # Exceptions (like for canvas we want to drop all but the assignment we are posting) exist,
 # and are handled in each function
-GRADESCOPE_NEVER_DROP = ['Email', 'Total Score', 'Status', 'Lateness']
+
+GRADESCOPE_NEVER_DROP = ['SID', 'Total Score', 'Status', 'Lateness']
 # Grace Period of 15 minutes
 GRADESCOPE_GRACE_PERIOD = 15
 
@@ -107,12 +111,7 @@ def loadGradescope(_filename):
     # All NaN values should be handled at this point
     gradescopeDF = gradescopeDF.astype({'hours_late': "float"}, copy=False)
 
-    # Get multipass from email
-    for i, row in gradescopeDF.iterrows():
-        gradescopeDF.at[i, 'Email'] = row['Email'].split('@')[0]
-        # this approach doesn't work as great if students aren't in gradescope with their correct emails, but I digress
-
-    gradescopeDF.rename(columns={'Email': 'multipass'}, inplace=True)
+    gradescopeDF.rename(columns={'SID': 'multipass'}, inplace=True)
     print("Done.")
     return gradescopeDF
 
@@ -137,7 +136,6 @@ def loadRunestone(_filename, assignment: str):
 
     # get the points out first; row 1 has the total point value
     column = runestoneDF.columns.get_loc(assignment)
-    totalPoints = int(runestoneDF.iloc[1][column])
 
     # drop due date, points, and class average rows (we just want user data)
     runestoneDF = runestoneDF.drop([0, 1, 2])
@@ -160,10 +158,11 @@ def loadRunestone(_filename, assignment: str):
 
     # Get multipass from email
     for i, row in runestoneDF.iterrows():
+        # TODO UPDATE for CWID
         runestoneDF.at[i, 'E-mail'] = row['E-mail'].split('@')[0]
 
-        # derive actual score from total points and score percentage
-        score = (totalPoints / 100) * float(row[assignment].split("%")[0])
+        # derive actual score from total points and score percentage - scale to 4 pts (reading pt amount)
+        score = (float(row[assignment].split("%")[0]) / 100) * 4
         runestoneDF.at[i, assignment] = score
 
         # add phony columns for gradesheet format

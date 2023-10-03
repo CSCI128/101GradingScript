@@ -13,6 +13,53 @@ in order to be scored and posted with everything else.
 """
 import pandas as pd
 
+from Bartik.Bartik import Bartik
+from AzureAD import AzureAD
+
+async def convertBartikToGradesheet(_azure: AzureAD, _bartik: Bartik, _students: pd.DataFrame, _assignment: str, _maxPoints: float, _requiredProbems: int) -> pd.DataFrame:
+    bartikGradesheet: pd.DataFrame = pd.DataFrame()
+    bartikGradesheet['multipass'] = ""
+    bartikGradesheet['Total Score'] = ""
+    bartikGradesheet['lateness_comment'] = ""
+
+    _bartik.openSession()
+
+    counter = 0
+    for _, row in _students.iterrows():
+        counter += 1
+        print(f"Now grading {row['name']} ({counter}/{len(_students)})...", end="")
+
+        studentEmail: str = await _azure.getEmailFromCWID(row['sis_id'])
+        
+        if studentEmail == "":
+            print(f"Failed to map email for {row['name']}")
+            continue
+
+
+        missing: bool = False
+        score: float = 0
+
+        try:
+            score = _bartik.getScoreForAssignment(studentEmail, _assignment, _requiredProbems, _maxPoints)
+        except Exception:
+            missing = True
+            print(f"Missing")
+
+        bartikGradesheet = pd.concat([bartikGradesheet, pd.DataFrame(
+                {
+                    'multipass': row['sis_id'],
+                    'Total Score': score,
+                    'lateness_comment': "",
+                }, index=[0]
+            )], ignore_index=True)
+
+        if not missing:
+            print("Done")
+        
+
+    _bartik.closeSession()
+    return bartikGradesheet
+
 
 def convertStatusAssignmentToGradesheet(_statusAssignment: pd.DataFrame) -> pd.DataFrame:
     """

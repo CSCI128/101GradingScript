@@ -2,7 +2,7 @@ import pandas as pd
 import FileHelpers.fileHelper as fileHelper
 
 DEFAULT_SPECIAL_CASES_SEARCH_PATH = "special_cases/special_cases.xlsx"
-SPECIAL_CASES_REQUIRED_COLUMNS = ["handled", "full_name", "assignment", "extension_type",
+SPECIAL_CASES_REQUIRED_COLUMNS = ["handled", "name", "assignment", "extension_type",
                                   "student_comment", "extension_days", "approved_by",
                                   "handled", "grader_notes"]
 
@@ -59,6 +59,8 @@ def loadSpecialCases():
     """
     specialCasesDF = loadExcel(DEFAULT_SPECIAL_CASES_SEARCH_PATH, promptIfError=False, directoriesToCheck=["./"])
 
+    specialCasesDF = specialCasesDF.astype({"CWID": str})
+
     if specialCasesDF.empty:
         print("Failed to automatically load special cases file. Please enter file name")
         usrIn = str(input("(./path/to/special_cases.xlsx): "))
@@ -91,10 +93,10 @@ def loadSpecialCases():
 
     # Get multipass from email
     for i, row in specialCasesDF.iterrows():
-        specialCasesDF.at[i, 'multipass'] = row['email'].split("@")[0]
+        specialCasesDF.at[i, 'multipass'] = row['CWID']
 
     # Set the date to be a date
-    specialCasesDF['new_due_date'] = pd.to_datetime(specialCasesDF['new_due_date'])
+#    specialCasesDF['new_due_date'] = pd.to_datetime(specialCasesDF['new_due_date'])
 
     # set the extension days to be an int
     specialCasesDF['extension_days'] = specialCasesDF['extension_days'].apply(pd.to_numeric)

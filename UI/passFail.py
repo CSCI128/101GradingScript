@@ -4,7 +4,7 @@ from Grade import grade, score, post, gradesheets
 import pandas as pd
 
 
-def passFail(**kwargs) -> bool:
+async def passFail(**kwargs) -> bool:
     uiHelpers.setupAssignments(kwargs['canvas'])
 
     passFailAssignmentsToGrade: dict[int, pd.DataFrame] = uiHelpers.setupPassFailAssignments(kwargs['canvas'])

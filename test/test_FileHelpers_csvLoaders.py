@@ -84,7 +84,7 @@ class TestCsvLoaders(unittest.TestCase):
 
         multipasses: list[str] = loadedData['multipass'].to_list()
         for el in multipasses:
-            self.assertNotIn(el, "@")
+            self.assertRegex(str(el), r"^\d+$")
 
         lateness: list[float] = loadedData['hours_late'].to_list()
 
@@ -137,7 +137,7 @@ class TestCsvLoaders(unittest.TestCase):
         Verify Invalid Gradesheet - Misnamed Columns
         """
         mockedData: pd.DataFrame = csvLoaders.loadCSV(self.gradesheetLocation)
-        mockedData.rename(columns={'Email': 'Missing Email'}, inplace=True)
+        mockedData.rename(columns={'SID': 'Ignore me'}, inplace=True)
         csvLoaders.loadCSV = mock.MagicMock(return_value=mockedData)
 
         loadedData: pd.DataFrame = csvLoaders.loadGradescope(self.gradesheetLocation)
