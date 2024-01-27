@@ -59,7 +59,6 @@ def loadSpecialCases():
     """
     specialCasesDF = loadExcel(DEFAULT_SPECIAL_CASES_SEARCH_PATH, promptIfError=False, directoriesToCheck=["./"])
 
-    specialCasesDF = specialCasesDF.astype({"CWID": str})
 
     if specialCasesDF.empty:
         print("Failed to automatically load special cases file. Please enter file name")
@@ -89,12 +88,9 @@ def loadSpecialCases():
             return createEmptySpecialCasesSheet()
 
     # We want to non-destructively get the multipass so that it is easier to use the spreadsheet later
-    specialCasesDF['multipass'] = ""
+    specialCasesDF['multipass'] = specialCasesDF["CWID"]
 
-    # Get multipass from email
-    for i, row in specialCasesDF.iterrows():
-        specialCasesDF.at[i, 'multipass'] = row['CWID']
-
+    specialCasesDF['multipass'] = specialCasesDF['multipass'].apply(lambda x: f"{x:.0f}")
     # Set the date to be a date
 #    specialCasesDF['new_due_date'] = pd.to_datetime(specialCasesDF['new_due_date'])
 
