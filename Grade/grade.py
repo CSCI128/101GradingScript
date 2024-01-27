@@ -147,14 +147,16 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
         elif _specialCasesDF.loc[currentSpecialCase, 'handled'].values[0] != "":
             continue
 
-        if _specialCasesDF.loc[currentSpecialCase, 'extension_type'] in _statusAssignmentsDF['trigger'].values:
+        indexToAccess = len(_specialCasesDF.loc[currentSpecialCase, 'extension_type'].values) - 1
+
+        if _specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[indexToAccess] in _statusAssignmentsDF['trigger'].values:
             # Create a bool mask for the current status assignment score for the student and the correct trigger
             currentStatusAssignment = \
                 (_statusAssignmentScoresDF['multipass'] == row['multipass']) & \
                 (_statusAssignmentScoresDF['status_assignment_id'] ==
                  (_statusAssignmentsDF.loc[_statusAssignmentsDF['trigger'] ==
-                                           _specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[0],
-                                           'id'].values[0]))
+                                           _specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[indexToAccess],
+                                           'id'].values[indexToAccess]))
             # Check to make sure that the student actually has a value for the status assignment
             #  This should only happen if the student dropped, or recently added and does not yet have a score
             #  for the assignment, either way, it will require manual intervention.
@@ -165,8 +167,8 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
                     "Unable to process triggered special case: No status assignment found for student"
 
             # if the student requested more of an extension than they were entitled to
-            elif _statusAssignmentScoresDF.loc[currentStatusAssignment, 'student_score'].values[0] < \
-                    _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]:
+            elif _statusAssignmentScoresDF.loc[currentStatusAssignment, 'student_score'].values[indexToAccess] < \
+                    _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[indexToAccess]:
 
                 _specialCasesDF.loc[currentSpecialCase, 'handled'] = "FALSE"
                 _specialCasesDF.loc[currentSpecialCase, 'grader_notes'] = \
@@ -178,14 +180,14 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
                     f"Automatically Approved on {datetime.date.today().strftime('%m-%d-%y')}"
 
                 _statusAssignmentScoresDF.loc[currentStatusAssignment, 'student_score'] -= \
-                    _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]
+                    _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[indexToAccess]
 
                 _specialCasesDF.loc[currentSpecialCase, 'approved_by'] = "AUTOMATIC APPROVAL"
-                extensionMessage: str = p.plural(_specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[0],
-                                                 _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0])
+                extensionMessage: str = p.plural(_specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[indexToAccess],
+                                                 _specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[indexToAccess])
 
                 _gradescopeDF.at[i, 'lateness_comment'] = \
-                    f"Extended with {_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[0]} " + \
+                    f"Extended with {_specialCasesDF.loc[currentSpecialCase, 'extension_days'].values[indexToAccess]} " + \
                     f"{extensionMessage}"
 
     return _gradescopeDF, _specialCasesDF, _statusAssignmentScoresDF
