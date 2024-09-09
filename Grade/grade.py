@@ -147,7 +147,7 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
         elif _specialCasesDF.loc[currentSpecialCase, 'handled'].values[0] != "":
             continue
 
-        indexToAccess = len(_specialCasesDF.loc[currentSpecialCase, 'extension_type'].values) - 1
+        indexToAccess = 0
 
         if _specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[indexToAccess] in _statusAssignmentsDF['trigger'].values:
             # Create a bool mask for the current status assignment score for the student and the correct trigger
@@ -157,6 +157,7 @@ def validateAndUpdateStatusAssignments(_gradescopeDF: pd.DataFrame,
                  (_statusAssignmentsDF.loc[_statusAssignmentsDF['trigger'] ==
                                            _specialCasesDF.loc[currentSpecialCase, 'extension_type'].values[indexToAccess],
                                            'id'].values[indexToAccess]))
+            
             # Check to make sure that the student actually has a value for the status assignment
             #  This should only happen if the student dropped, or recently added and does not yet have a score
             #  for the assignment, either way, it will require manual intervention.
