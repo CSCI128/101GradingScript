@@ -1,6 +1,7 @@
 from typing import List, Optional
 from sqlalchemy import create_engine, Engine, select
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import asc
 from Bartik.Assignments import Assignments
 from Bartik.AssignmentsProblemsMap import AssignmentsProblemsMap
 from Bartik.Courses import Courses
@@ -55,7 +56,7 @@ class Bartik():
         if self.session is None:
             raise Exception("Session must be started")
 
-        assessmentIdStm = select(Assignments).where(Assignments.name.like(f"%{_assessment}%"), Assignments.course_id == self.COURSE_ID)
+        assessmentIdStm = select(Assignments).where(Assignments.name.like(f"%{_assessment}%"), Assignments.course_id == self.COURSE_ID).order_by(asc(Assignments.name))
         assessmentIdAssessment = self.session.scalars(assessmentIdStm).first()
 
         if assessmentIdAssessment is None:
