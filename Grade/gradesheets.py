@@ -11,12 +11,16 @@ ok to just leave it as an empty string for all assignments.
 This file **non-destructively** creates gradesheets. The generated gradesheets still have to be 'selected' in Canvas
 in order to be scored and posted with everything else.
 """
+from typing import List
+
 import pandas as pd
 
 from Bartik.Bartik import Bartik
 from AzureAD import AzureAD
 
-async def convertBartikToGradesheet(_azure: AzureAD, _bartik: Bartik, _students: pd.DataFrame, _assignment: str, _maxPoints: float, _requiredProbems: int) -> pd.DataFrame:
+
+async def convertBartikToGradesheet(_azure: AzureAD, _bartik: Bartik, _students: pd.DataFrame, _assignment: str,
+                                    _maxPoints: float, _requiredProbems: int) -> pd.DataFrame:
     bartikGradesheet: pd.DataFrame = pd.DataFrame()
     bartikGradesheet['multipass'] = ""
     bartikGradesheet['Total Score'] = ""
@@ -30,11 +34,10 @@ async def convertBartikToGradesheet(_azure: AzureAD, _bartik: Bartik, _students:
         print(f"Now grading {row['name']} ({counter}/{len(_students)})...", end="")
 
         studentEmail: str = await _azure.getEmailFromCWID(row['sis_id'])
-        
+
         if studentEmail == "":
             print(f"Failed to map email for {row['name']}")
             continue
-
 
         missing: bool = False
         score: float = 0
@@ -46,16 +49,15 @@ async def convertBartikToGradesheet(_azure: AzureAD, _bartik: Bartik, _students:
             print(f"Missing")
 
         bartikGradesheet = pd.concat([bartikGradesheet, pd.DataFrame(
-                {
-                    'multipass': row['sis_id'],
-                    'Total Score': score,
-                    'lateness_comment': "",
-                }, index=[0]
-            )], ignore_index=True)
+            {
+                'multipass': row['sis_id'],
+                'Total Score': score,
+                'lateness_comment': "",
+            }, index=[0]
+        )], ignore_index=True)
 
         if not missing:
             print("Done")
-        
 
     _bartik.closeSession()
     return bartikGradesheet
@@ -97,7 +99,6 @@ def createGradesheetForPassFailAssignment(_passFailAssignment: pd.DataFrame, _st
                                           checkProofOfAttendance: bool = False,
                                           proofOfAttendanceColumn: (str, None) = None) \
         -> pd.DataFrame:
-
     if proofOfAttendanceColumn:
         proofOfAttendanceColumn = proofOfAttendanceColumn.replace(' ', '_')
 
@@ -141,4 +142,13 @@ def createGradesheetForPassFailAssignment(_passFailAssignment: pd.DataFrame, _st
     return _passFailAssignment
 
 
+async def finalizeGradesheet(azure: AzureAD, assignment: pd.DataFrame):
+    emails = assignment['email'].tolist()
 
+    emailsWithCwids = await azure.getCWIDFromEmail(emails)
+    assignment['multipass'] = ''
+
+    for i, row in assignment.iterrows():
+        assignment.loc[i, 'multipass'] = [email[1] for email in emailsWithCwids if email[0] == row['email']][0]
+
+    return assignment

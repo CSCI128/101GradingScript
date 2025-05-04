@@ -20,8 +20,8 @@ async def standardGrading(**kwargs):
         gradesheetsToGrade: dict[int, pd.DataFrame] = uiHelpers.setupGradescopeGrades(kwargs['canvas'])
     elif choice == 2:
         gradesheetsToGrade: dict[int, pd.DataFrame] = uiHelpers.setupRunestoneGrades(kwargs['canvas'])
-    elif choice == 3:
-        return NotImplementedError # TODO add PL support
+    else:
+        gradesheetsToGrade: dict[int, pd.DataFrame] = await uiHelpers.setupPLGrades(kwargs['canvas'], kwargs['azure'])
 
     specialCasesDF = uiHelpers.setupSpecialCases()
 

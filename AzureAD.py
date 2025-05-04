@@ -31,18 +31,24 @@ class AzureAD():
 
 
 
-    async def getCWIDFromEmail(self, username: str) -> str:
-        query = UsersRequestBuilder.UsersRequestBuilderGetQueryParameters(
-                select=["employeeId"],
-            )
+    async def getCWIDFromEmail(self, usernames: list[str]) -> list[tuple[str, str]]:
+        cwidMap = []
 
-        requestConfig = UsersRequestBuilder.UsersRequestBuilderGetRequestConfiguration(query_parameters=query)
-        userCwid = await self.client.users.by_user_id(username).get(requestConfig)
+        for i in range(0, len(usernames), 14):
+            query = UsersRequestBuilder.UsersRequestBuilderGetQueryParameters(
+                    select=["employeeId", "userPrincipalName"],
+                    filter=f"userPrincipalName in ['{'\',\''.join(usernames[i:i+14])}'] and accountEnabled eq true",
+                )
 
-        if userCwid is None or userCwid.employee_id is None:
-            return ""
+            requestConfig = UsersRequestBuilder.UsersRequestBuilderGetRequestConfiguration(query_parameters=query)
+            userCwids = await self.client.users.get(requestConfig)
 
-        return userCwid.employee_id
+            if userCwids is None:
+                continue
+
+            cwidMap.extend([(val.user_principal_name, val.employee_id) for val in userCwids.value])
+
+        return cwidMap
 
     async def getEmailFromCWID(self, cwid: str) -> str:
         query = UsersRequestBuilder.UsersRequestBuilderGetQueryParameters(
