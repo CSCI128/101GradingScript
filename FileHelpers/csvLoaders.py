@@ -1,5 +1,8 @@
 # The biggest change that needs to be made is to remap mutlipasses to cwids
-
+import csv
+import re
+import sys
+from typing import List, Dict
 
 import pandas as pd
 from FileHelpers import fileHelper
@@ -12,6 +15,7 @@ GRADESCOPE_NEVER_DROP = ['SID', 'Total Score', 'Status', 'Lateness']
 # Grace Period of 15 minutes
 GRADESCOPE_GRACE_PERIOD = 15
 
+csv.field_size_limit(sys.maxsize)
 
 def loadCSV(_filename: str, promptIfError: bool = False, directoriesToCheck: list[str] = None):
     """
@@ -115,6 +119,69 @@ def loadGradescope(_filename):
     print("Done.")
     return gradescopeDF
 
+def extractGroupFromPL(group: str):
+    r = re.compile(r"[\[\"\]]")
+
+    group = re.sub(r, "", group)
+
+    return group.split(",")
+
+def convertGroupSubmissionToIndividualSubmission(header: List[str], data: List[List[str]]):
+    GROUP_MEMBER_IDX = header.index("Usernames")
+    SUBMISSION_DATE_INDEX = header.index("Submission date")
+    QUESTION_POINTS_IDX = header.index("Question points")
+
+    normalizedSubmission = []
+
+    for line in data:
+        members = extractGroupFromPL(line[GROUP_MEMBER_IDX])
+        for member in members:
+            normalizedSubmission.append([member, line[SUBMISSION_DATE_INDEX], float(line[QUESTION_POINTS_IDX])])
+
+    return normalizedSubmission
+
+def parseLinePL(students: Dict[str, List[str]], line: List[str]):
+    USER_ID_IDX = 0
+    SUBMISSION_DATE_IDX = 1
+    POINTS_IDX = 2
+
+    if not line[USER_ID_IDX]:
+        # empty group
+        return
+
+    if line[USER_ID_IDX] in students.keys():
+        students[line[USER_ID_IDX]][SUBMISSION_DATE_IDX] = line[SUBMISSION_DATE_IDX]
+        students[line[USER_ID_IDX]][POINTS_IDX] += line[POINTS_IDX]
+        return
+
+    students[line[USER_ID_IDX]] = [line[USER_ID_IDX], line[SUBMISSION_DATE_IDX], line[POINTS_IDX]]
+
+def loadPrairieLearn(filename):
+    data = []
+    try:
+        with open(filename) as r:
+            reader = csv.reader(r, quotechar='"')
+            for line in reader:
+                data.append(line)
+    except FileNotFoundError:
+        return pd.DataFrame()
+
+    data = convertGroupSubmissionToIndividualSubmission(data[0], data[1:])
+
+    scores = {}
+
+    for line in data[1:]:
+        parseLinePL(scores, line)
+
+    plDF = pd.DataFrame({
+        'email': [value[0] for value in scores.values()],
+        'hours_late': [0 for _ in range(len(scores))],
+        'Total Score': [value[2] for value in scores.values()],
+        'Status': ['Graded' for _ in range(len(scores))],
+        'lateness_comment': ['' for _ in range(len(scores))],
+    })
+
+    return plDF
 
 def loadRunestone(_filename, assignment: str):
     """

@@ -1,9 +1,12 @@
 """
 """
 import pandas as pd
-from FileHelpers.csvLoaders import loadGradescope, loadRunestone
+
+from AzureAD import AzureAD
+from FileHelpers.csvLoaders import loadGradescope, loadRunestone, loadPrairieLearn
 from FileHelpers.excelLoaders import loadSpecialCases, loadPassFailAssignment
 from Canvas import Canvas
+from Grade.gradesheets import finalizeGradesheet
 
 
 def getUserInput(allowedUserInput: str = None, allowedLowerRange: int = None, allowedUpperRange: int = None):
@@ -93,6 +96,23 @@ def setupGradescopeGrades(_canvas: Canvas) -> dict[int, pd.DataFrame]:
 
     return assignmentMap
 
+async def setupPLGrades(canvas: Canvas, azure: AzureAD) -> dict[int, pd.DataFrame]:
+    # the IDs will always be unique per course - using those over the common names
+    selectedAssignments: pd.DataFrame = canvas.getAssignmentsToGrade()
+    assignmentMap: dict[int, pd.DataFrame] = {}
+    if selectedAssignments is None:
+        return assignmentMap
+    for i, row in selectedAssignments.iterrows():
+        print(f"Enter path to pl grades for {row['common_name']}")
+        path = getUserInput(allowedUserInput="./path/to/pl/grades.csv")
+        plDf: pd.DataFrame = await finalizeGradesheet(azure, loadPrairieLearn(path))
+        if plDf.empty:
+            print(f"Failed to load file '{path}'")
+            # TODO handle this case more elegantly
+            return {}
+        assignmentMap[row['id']] = plDf
+
+    return assignmentMap
 
 def setupRunestoneGrades(_canvas: Canvas) -> dict[int, pd.DataFrame]:
     # the IDs will always be unique per course - using those over the common names
