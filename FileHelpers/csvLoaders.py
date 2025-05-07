@@ -113,7 +113,7 @@ def loadGradescope(_filename):
 
     gradescopeDF.rename(columns={'Lateness': 'hours_late'}, inplace=True)
     # All NaN values should be handled at this point
-    gradescopeDF = gradescopeDF.astype({'hours_late': "float"}, copy=False)
+    gradescopeDF = gradescopeDF.astype({'hours_late': "float", 'SID': "string"}, copy=False)
 
     gradescopeDF.rename(columns={'SID': 'multipass'}, inplace=True)
     print("Done.")

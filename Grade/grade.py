@@ -321,6 +321,9 @@ def calculateLatePenalty(_gradescopeDF: pd.DataFrame, _specialCasesDF: pd.DataFr
                 _gradescopeDF.at[i, 'lateness_comment'] = \
                     f"-{(1 - latePenalty[daysLate]) * 100:02.0f}%25: {daysLate} {pluralizedDays} late"
 
+        _gradescopeDF.at[i, 'Total Score'] = max(_gradescopeDF.at[i, 'Total Score'], 0)
+
+
     # the only possible case here is if a student has a special case requested but was not found in gradescope
     if not _specialCasesDF.empty and specialCaseStudents != len(
 
