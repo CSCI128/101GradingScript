@@ -4,6 +4,10 @@ Grading Posting Script
 
 A program designed to accelerate the grade posting process from Gradescope to Canvas
 
+.. attention::
+   This project has been deprecated and archived. Please switch to using Packtrain. No further features will be added. No bugs will be fixed.
+   This repo is read only as of 8/21/2025
+
 .. note::
    This documentation is a work in progress
 
